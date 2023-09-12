@@ -2,10 +2,9 @@ package test
 
 import (
 	"ale/client"
-	"ale/core/Contract"
+	"ale/core/contract"
 	"ale/core/types"
 	pb "ale/protobuf/generated"
-	"ale/utils"
 	"encoding/base64"
 	"encoding/hex"
 	"github.com/davecgh/go-spew/spew"
@@ -17,16 +16,19 @@ import (
 )
 
 var (
-	mainClient = client.NewAElfClient("cd86ab6347d8e52bbbe8532141fc59ce596268143a308d1d40fedf385528b458", utils.NewHttpClient(utils.Config{
-		Endpoints:         []string{"http://127.0.0.1:8000"},
-		Version:           "1.0",
-		TimeoutPerRequest: 0,
-	}))
-	sideClient = client.NewAElfClient("*", utils.NewHttpClient(utils.Config{
-		Endpoints:         []string{"http://127.0.0.1:8000"},
-		Version:           "1.0",
-		TimeoutPerRequest: 0,
-	}))
+	mainClient, _ = client.New(&client.Config{
+		Endpoints:  []string{"http://127.0.0.1:8000"},
+		Version:    "1.0",
+		PrivateKey: "cd86ab6347d8e52bbbe8532141fc59ce596268143a308d1d40fedf385528b458",
+		Timeout:    0,
+	})
+
+	sideClient, _ = client.New(&client.Config{
+		Endpoints:  []string{"http://127.0.0.1:8000"},
+		Version:    "1.0",
+		PrivateKey: "cd86ab6347d8e52bbbe8532141fc59ce596268143a308d1d40fedf385528b458",
+		Timeout:    0,
+	})
 
 	networkInfo, _ = mainClient.GetNetworkInfo()
 	peers, _       = mainClient.GetPeers(true)
@@ -57,7 +59,7 @@ func TestGenerateKeyPairInfo(t *testing.T) {
 }
 
 func TestGetContractAddressByName(t *testing.T) {
-	contractAddress, err := mainClient.GetContractAddressByName(Contract.TokenContractSystemName)
+	contractAddress, err := mainClient.GetContractAddressByName(contract.TokenContractSystemName)
 	assert.NoError(t, err)
 	spew.Dump("Get ContractAddress By Name Result", contractAddress)
 }

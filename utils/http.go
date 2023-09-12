@@ -11,23 +11,17 @@ import (
 	"time"
 )
 
-type Config struct {
-	Endpoints         []string
-	Version           string
-	TimeoutPerRequest time.Duration
-}
-
 type HttpClient struct {
 	endpoints []string
 	Version   string
 	Client    *http.Client
 }
 
-func NewHttpClient(cfg Config) *HttpClient {
+func NewHttpClient(version string, timeout time.Duration) *HttpClient {
 	c := &HttpClient{
-		Version: cfg.Version,
+		Version: version,
 		Client: &http.Client{
-			Timeout: cfg.TimeoutPerRequest,
+			Timeout: timeout,
 		},
 	}
 

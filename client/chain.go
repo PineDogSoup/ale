@@ -10,9 +10,9 @@ import (
 )
 
 // GetChainStatus Get the current status of the block chain.
-func (ac *AElfClient) GetChainStatus() (*types.ChainStatus, error) {
-	url := ac.Host + CHAINSTATUS
-	chainBytes, err := utils.GetRequest("GET", url, ac.Version, nil)
+func (c *AElfClient) GetChainStatus() (*types.ChainStatus, error) {
+	url := c.Host + CHAINSTATUS
+	chainBytes, err := utils.GetRequest("GET", url, c.Version, nil)
 	if err != nil {
 		return nil, errors.New("Get ChainStatus error:" + err.Error())
 	}
@@ -22,10 +22,10 @@ func (ac *AElfClient) GetChainStatus() (*types.ChainStatus, error) {
 }
 
 // GetContractFileDescriptorSet Get the definitions of proto-buff related to a contract.
-func (ac *AElfClient) GetContractFileDescriptorSet(address string) ([]byte, error) {
-	url := ac.Host + FILEDESCRIPTOR
+func (c *AElfClient) GetContractFileDescriptorSet(address string) ([]byte, error) {
+	url := c.Host + FILEDESCRIPTOR
 	params := map[string]interface{}{"address": address}
-	data, err := utils.GetRequest("GET", url, ac.Version, params)
+	data, err := utils.GetRequest("GET", url, c.Version, params)
 	if err != nil {
 		return nil, errors.New("Get ContractFile Descriptor Set error:" + err.Error())
 	}
@@ -33,8 +33,8 @@ func (ac *AElfClient) GetContractFileDescriptorSet(address string) ([]byte, erro
 }
 
 // GetChainID Get id of the chain.
-func (ac *AElfClient) GetChainID() (int, error) {
-	chainStatus, err := ac.GetChainStatus()
+func (c *AElfClient) GetChainID() (int, error) {
+	chainStatus, err := c.GetChainStatus()
 	if err != nil {
 		return 0, errors.New("Get Chain Status error:" + err.Error())
 	}
@@ -53,9 +53,9 @@ func (ac *AElfClient) GetChainID() (int, error) {
 }
 
 // GetTaskQueueStatus Get the status information of the task queue.
-func (ac *AElfClient) GetTaskQueueStatus() ([]*types.TaskQueueInfo, error) {
-	url := ac.Host + TASKQUEUESTATUS
-	queues, err := utils.GetRequest("GET", url, ac.Version, nil)
+func (c *AElfClient) GetTaskQueueStatus() ([]*types.TaskQueueInfo, error) {
+	url := c.Host + TASKQUEUESTATUS
+	queues, err := utils.GetRequest("GET", url, c.Version, nil)
 	if err != nil {
 		return nil, errors.New("Get Task Queue Status error:" + err.Error())
 	}

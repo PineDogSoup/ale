@@ -56,5 +56,5 @@ func TestGetContractFileDescriptorSet(t *testing.T) {
 	contractFile, err := mainClient.GetContractFileDescriptorSet(contractAddr)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, contractFile)
-	spew.Dump("Get Contract File Descriptor Set Result", contractFile)
+	spew.Dump("Get contract File Descriptor Set Result", contractFile)
 }

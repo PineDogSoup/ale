@@ -8,9 +8,9 @@ import (
 )
 
 // GetNetworkInfo Get the node's network information.
-func (ac *AElfClient) GetNetworkInfo() (*types.NetworkInfo, error) {
-	url := ac.Host + NETWORKINFO
-	networkBytes, err := utils.GetRequest("GET", url, ac.Version, nil)
+func (c *AElfClient) GetNetworkInfo() (*types.NetworkInfo, error) {
+	url := c.Host + NETWORKINFO
+	networkBytes, err := utils.GetRequest("GET", url, c.Version, nil)
 	if err != nil {
 		return nil, errors.New("Get Network Info error:" + err.Error())
 	}
@@ -50,10 +50,10 @@ func (ac *AElfClient) GetNetworkInfo() (*types.NetworkInfo, error) {
 //}
 
 // GetPeers Gets information about the peer nodes of the current node.Optional whether to include metrics.
-func (ac *AElfClient) GetPeers(withMetrics bool) ([]*types.Peer, error) {
-	url := ac.Host + PEERS
+func (c *AElfClient) GetPeers(withMetrics bool) ([]*types.Peer, error) {
+	url := c.Host + PEERS
 	params := map[string]interface{}{"withMetrics": withMetrics}
-	peerBytes, err := utils.GetRequest("GET", url, ac.Version, params)
+	peerBytes, err := utils.GetRequest("GET", url, c.Version, params)
 	if err != nil {
 		return nil, errors.New("Get Peers error:" + err.Error())
 	}

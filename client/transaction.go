@@ -1,97 +1,53 @@
 package client
 
 import (
-	"ale/core/Contract"
+	"ale/core/contract"
 	"ale/core/types"
-	client "ale/protobuf/generated"
+	pb "ale/protobuf/generated"
 	"ale/utils"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"github.com/davecgh/go-spew/spew"
+	secp256 "github.com/haltingstate/secp256k1-go"
 	"google.golang.org/protobuf/proto"
 )
 
-// GetTransactionPoolStatus Get information about the current transaction pool.
-func (ac *AElfClient) GetTransactionPoolStatus() (*types.TransactionPoolStatusOutput, error) {
-	url := ac.Host + TRANSACTIONPOOLSTATUS
-	//resp, err := ac.c.Do("GET", url, nil)
-	transactionPoolBytes, err := utils.GetRequest("GET", url, ac.Version, nil)
-	if err != nil {
-		return nil, errors.New("Get Transaction Pool Status error:" + err.Error())
-	}
-	var transactionPool = new(types.TransactionPoolStatusOutput)
-	json.Unmarshal(transactionPoolBytes, &transactionPool)
-	return transactionPool, nil
+// SignTransaction Sign a transaction using private key.
+func (c *AElfClient) SignTransaction(privateKey string, transaction *pb.Transaction) ([]byte, error) {
+	transactionBytes, _ := proto.Marshal(transaction)
+	txDataBytes := sha256.Sum256(transactionBytes)
+	privateKeyBytes, _ := hex.DecodeString(privateKey)
+	signatureBytes := secp256.Sign(txDataBytes[:], privateKeyBytes)
+	return signatureBytes, nil
 }
 
-// GetTransactionResult Gets the result of transaction execution by the given transactionId.
-func (ac *AElfClient) GetTransactionResult(transactionID string) (*types.TransactionResult, error) {
-	url := ac.Host + TRANSACTIONRESULT
-	_, err := hex.DecodeString(transactionID)
+// CreateTransaction create a transaction from the input parameters.
+func (c *AElfClient) CreateTransaction(from, to, method string, params []byte) (*pb.Transaction, error) {
+	chainStatus, err := c.GetChainStatus()
 	if err != nil {
-		return nil, errors.New("transactionID hex to []byte error:" + err.Error())
+		return nil, errors.New("Get Chain Status error ")
 	}
-	params := map[string]interface{}{"transactionId": transactionID}
-	transactionBytes, err := utils.GetRequest("GET", url, ac.Version, params)
-	if err != nil {
-		return nil, errors.New("Get Transaction Result error:" + err.Error())
+	prefixBytes, _ := hex.DecodeString(chainStatus.BestChainHash)
+	fromAddressBytes, _ := utils.Base58StringToAddress(from)
+	toAddressBytes, _ := utils.Base58StringToAddress(to)
+	var transaction = &pb.Transaction{
+		From:           fromAddressBytes,
+		To:             toAddressBytes,
+		MethodName:     method,
+		RefBlockNumber: chainStatus.BestChainHeight,
+		RefBlockPrefix: prefixBytes[:4],
+		Params:         params,
 	}
-	var transaction = new(types.TransactionResult)
-	json.Unmarshal(transactionBytes, &transaction)
 	return transaction, nil
 }
 
-// GetTransactionResults Get results of multiple transactions by specified blockHash.
-func (ac *AElfClient) GetTransactionResults(blockHash string, offset, limit int) ([]*types.TransactionResult, error) {
-	url := ac.Host + TRANSACTIONRESULTS
-	_, err := hex.DecodeString(blockHash)
-	if err != nil {
-		return nil, errors.New("blockHash hex to []byte error:" + err.Error())
-	}
-	params := map[string]interface{}{
-		"blockHash": blockHash,
-		"offset":    offset,
-		"limit":     limit,
-	}
-	transactionsBytes, err := utils.GetRequest("GET", url, ac.Version, params)
-	if err != nil {
-		return nil, errors.New("Get Transaction Results error:" + err.Error())
-	}
-	var datas interface{}
-	json.Unmarshal(transactionsBytes, &datas)
-	var transactions []*types.TransactionResult
-	for _, d := range datas.([]interface{}) {
-		var transaction = new(types.TransactionResult)
-		Bytes, _ := json.Marshal(d)
-		json.Unmarshal(Bytes, &transaction)
-		transactions = append(transactions, transaction)
-	}
-	return transactions, nil
-}
-
-// GetMerklePathByTransactionID Get merkle path of a transaction.
-func (ac *AElfClient) GetMerklePathByTransactionID(transactionID string) (*types.MerklePath, error) {
-	url := ac.Host + MBYTRANSACTIONID
-	_, err := hex.DecodeString(transactionID)
-	if err != nil {
-		return nil, errors.New("transactionID hex to []byte error:" + err.Error())
-	}
-	params := map[string]interface{}{"transactionId": transactionID}
-	merkleBytes, err := utils.GetRequest("GET", url, ac.Version, params)
-	if err != nil {
-		return nil, errors.New("Get MerklePath By TransactionID error:" + err.Error())
-	}
-	var merkle = new(types.MerklePath)
-	json.Unmarshal(merkleBytes, &merkle)
-	return merkle, nil
-}
-
 // ExecuteTransaction  Call a read-only method of a contract.
-func (ac *AElfClient) ExecuteTransaction(rawTransaction string) (string, error) {
-	url := ac.Host + EXECUTETRANSACTION
+func (c *AElfClient) ExecuteTransaction(rawTransaction string) (string, error) {
+	url := c.Host + EXECUTETRANSACTION
 	params := map[string]interface{}{"RawTransaction": rawTransaction}
-	transactionBytes, err := utils.PostRequest(url, ac.Version, params)
+	transactionBytes, err := utils.PostRequest(url, c.Version, params)
 	if err != nil {
 		return "", errors.New("Execute Transaction error:" + err.Error())
 	}
@@ -99,13 +55,13 @@ func (ac *AElfClient) ExecuteTransaction(rawTransaction string) (string, error) 
 }
 
 // ExecuteRawTransaction Call a method of a contract by given serialized strings.
-func (ac *AElfClient) ExecuteRawTransaction(input *types.ExecuteRawTransaction) (string, error) {
-	url := ac.Host + EXECUTERAWTRANSACTION
+func (c *AElfClient) ExecuteRawTransaction(input *types.ExecuteRawTransaction) (string, error) {
+	url := c.Host + EXECUTERAWTRANSACTION
 	params := map[string]interface{}{
 		"RawTransaction": input.RawTransaction,
 		"Signature":      input.Signature,
 	}
-	transactionBytes, err := utils.PostRequest(url, ac.Version, params)
+	transactionBytes, err := utils.PostRequest(url, c.Version, params)
 	if err != nil {
 		return "", errors.New("Execute RawTransaction error:" + err.Error())
 	}
@@ -115,10 +71,10 @@ func (ac *AElfClient) ExecuteRawTransaction(input *types.ExecuteRawTransaction) 
 }
 
 // SendTransaction Broadcast a transaction.
-func (ac *AElfClient) SendTransaction(transaction string) (*types.SendTransactionOutput, error) {
-	url := ac.Host + SENDTRANSACTION
+func (c *AElfClient) SendTransaction(transaction string) (*types.SendTransactionOutput, error) {
+	url := c.Host + SENDTRANSACTION
 	params := map[string]interface{}{"RawTransaction": transaction}
-	transactionBytes, err := utils.PostRequest(url, ac.Version, params)
+	transactionBytes, err := utils.PostRequest(url, c.Version, params)
 	if err != nil {
 		return nil, errors.New("Send Transaction error:" + err.Error())
 	}
@@ -128,8 +84,8 @@ func (ac *AElfClient) SendTransaction(transaction string) (*types.SendTransactio
 }
 
 // CreateRawTransaction Creates an unsigned serialized transaction.
-func (ac *AElfClient) CreateRawTransaction(input *types.CreateRawTransactionInput) (*types.CreateRawTransactionOutput, error) {
-	url := ac.Host + RAWTRANSACTION
+func (c *AElfClient) CreateRawTransaction(input *types.CreateRawTransactionInput) (*types.CreateRawTransactionOutput, error) {
+	url := c.Host + RAWTRANSACTION
 	params := map[string]interface{}{
 		"From":           input.From,
 		"MethodName":     input.MethodName,
@@ -138,7 +94,7 @@ func (ac *AElfClient) CreateRawTransaction(input *types.CreateRawTransactionInpu
 		"RefBlockNumber": input.RefBlockNumber,
 		"To":             input.To,
 	}
-	transactionBytes, err := utils.PostRequest(url, ac.Version, params)
+	transactionBytes, err := utils.PostRequest(url, c.Version, params)
 	if err != nil {
 		return nil, errors.New("Create RawTransaction error:" + err.Error())
 	}
@@ -148,14 +104,14 @@ func (ac *AElfClient) CreateRawTransaction(input *types.CreateRawTransactionInpu
 }
 
 // SendRawTransaction Broadcast a serialized transaction.
-func (ac *AElfClient) SendRawTransaction(transaction, signature string, returnTransaction bool) (*types.SendRawTransaction, error) {
-	url := ac.Host + SENDRAWTRANSACTION
+func (c *AElfClient) SendRawTransaction(transaction, signature string, returnTransaction bool) (*types.SendRawTransaction, error) {
+	url := c.Host + SENDRAWTRANSACTION
 	params := map[string]interface{}{
 		"Transaction":       transaction,
 		"Signature":         signature,
 		"ReturnTransaction": returnTransaction,
 	}
-	rawTransactionBytes, err := utils.PostRequest(url, ac.Version, params)
+	rawTransactionBytes, err := utils.PostRequest(url, c.Version, params)
 	if err != nil {
 		return nil, errors.New("Send RawTransaction error:" + err.Error())
 	}
@@ -165,12 +121,12 @@ func (ac *AElfClient) SendRawTransaction(transaction, signature string, returnTr
 }
 
 // SendTransactions Broadcast volume transactions.
-func (ac *AElfClient) SendTransactions(rawTransactions string) ([]interface{}, error) {
-	url := ac.Host + SENDTRANSACTIONS
+func (c *AElfClient) SendTransactions(rawTransactions string) ([]interface{}, error) {
+	url := c.Host + SENDTRANSACTIONS
 	params := map[string]interface{}{
 		"RawTransactions": rawTransactions,
 	}
-	transactionsBytes, err := utils.PostRequest(url, ac.Version, params)
+	transactionsBytes, err := utils.PostRequest(url, c.Version, params)
 	if err != nil {
 		return nil, errors.New("Send Transaction error:" + err.Error())
 	}
@@ -183,12 +139,12 @@ func (ac *AElfClient) SendTransactions(rawTransactions string) ([]interface{}, e
 	return transactions, nil
 }
 
-func (ac *AElfClient) CalculateTransactionFee(rawTransaction string) (*types.CalculateTransactionFee, error) {
-	url := ac.Host + CALCULATETRANSACTIONFEE
+func (c *AElfClient) CalculateTransactionFee(rawTransaction string) (*types.CalculateTransactionFee, error) {
+	url := c.Host + CALCULATETRANSACTIONFEE
 	params := map[string]interface{}{
 		"RawTransaction": rawTransaction,
 	}
-	transactionFeeResult, err := utils.PostRequest(url, ac.Version, params)
+	transactionFeeResult, err := utils.PostRequest(url, c.Version, params)
 	if err != nil {
 		return nil, errors.New("CalculateTransactionFee error:" + err.Error())
 	}
@@ -199,7 +155,7 @@ func (ac *AElfClient) CalculateTransactionFee(rawTransaction string) (*types.Cal
 
 }
 
-func (ac *AElfClient) GetTransactionFees(transactionResultDto types.TransactionResult) (map[string][]map[string]interface{}, error) {
+func (c *AElfClient) GetTransactionFees(transactionResultDto types.TransactionResult) (map[string][]map[string]interface{}, error) {
 	var feeDicts = map[string][]map[string]interface{}{}
 	eventLogs := transactionResultDto.Logs
 	if len(eventLogs) == 0 {
@@ -208,14 +164,14 @@ func (ac *AElfClient) GetTransactionFees(transactionResultDto types.TransactionR
 	for _, log := range eventLogs {
 		nonIndexedBytes, _ := utils.Base64DecodeBytes(log.NonIndexed)
 		if log.Name == "TransactionFeeCharged" {
-			var feeCharged = new(client.TransactionFeeCharged)
+			var feeCharged = new(pb.TransactionFeeCharged)
 			proto.Unmarshal(nonIndexedBytes, feeCharged)
 			var feeMap = map[string]interface{}{feeCharged.Symbol: feeCharged.Amount}
 			feeDicts["TransactionFeeCharged"] = append(feeDicts["TransactionFeeCharged"], feeMap)
 		}
 
 		if log.Name == "ResourceTokenCharged" {
-			var tokenCharged = new(client.ResourceTokenCharged)
+			var tokenCharged = new(pb.ResourceTokenCharged)
 			proto.Unmarshal(nonIndexedBytes, tokenCharged)
 			var feeMap = map[string]interface{}{tokenCharged.Symbol: tokenCharged.Amount}
 			feeDicts["ResourceTokenCharged"] = append(feeDicts["ResourceTokenCharged"], feeMap)
@@ -224,33 +180,33 @@ func (ac *AElfClient) GetTransactionFees(transactionResultDto types.TransactionR
 	return feeDicts, nil
 }
 
-func (ac *AElfClient) GetTransferred(txId string) []*client.Transferred {
-	transffereds := make([]*client.Transferred, 0)
-	result, err := ac.GetTransactionResult(txId)
+func (c *AElfClient) GetTransferred(txId string) []*pb.Transferred {
+	transffereds := make([]*pb.Transferred, 0)
+	result, err := c.GetTransactionResult(txId)
 	if err != nil || len(result.Logs) == 0 {
 		return transffereds
 	}
 
-	contractAddr, _ := ac.GetContractAddressByName(Contract.TokenContractSystemName)
+	contractAddr, _ := c.GetContractAddressByName(contract.TokenContractSystemName)
 
 	for _, log := range result.Logs {
-		if log.Name == Contract.TransferredLogEventName && log.Address == contractAddr {
-			transferred := new(client.Transferred)
+		if log.Name == contract.TransferredLogEventName && log.Address == contractAddr {
+			transferred := new(pb.Transferred)
 			if nonIndexedBytes, err := utils.Base64DecodeBytes(log.NonIndexed); err == nil {
 				proto.Unmarshal(nonIndexedBytes, transferred)
 			}
 			if fromBytes, err := utils.Base64DecodeBytes(log.Indexed[0]); err == nil {
-				temp := new(client.Transferred)
+				temp := new(pb.Transferred)
 				proto.Unmarshal(fromBytes, temp)
 				transferred.From = temp.From
 			}
 			if toBytes, err := utils.Base64DecodeBytes(log.Indexed[1]); err == nil {
-				temp := new(client.Transferred)
+				temp := new(pb.Transferred)
 				proto.Unmarshal(toBytes, temp)
 				transferred.To = temp.To
 			}
 			if symbolBytes, err := utils.Base64DecodeBytes(log.Indexed[2]); err == nil {
-				temp := new(client.Transferred)
+				temp := new(pb.Transferred)
 				proto.Unmarshal(symbolBytes, temp)
 				transferred.Symbol = temp.Symbol
 			}
@@ -261,18 +217,18 @@ func (ac *AElfClient) GetTransferred(txId string) []*client.Transferred {
 	return transffereds
 }
 
-func (ac *AElfClient) GetCrossChainTransferred(txId string) []*client.CrossChainTransferred {
-	crossChainTransferreds := make([]*client.CrossChainTransferred, 0)
-	result, err := ac.GetTransactionResult(txId)
+func (c *AElfClient) GetCrossChainTransferred(txId string) []*pb.CrossChainTransferred {
+	crossChainTransferreds := make([]*pb.CrossChainTransferred, 0)
+	result, err := c.GetTransactionResult(txId)
 	if err != nil || len(result.Logs) == 0 {
 		return crossChainTransferreds
 	}
 
-	contractAddr, _ := ac.GetContractAddressByName(Contract.TokenContractSystemName)
+	contractAddr, _ := c.GetContractAddressByName(contract.TokenContractSystemName)
 
 	for _, log := range result.Logs {
-		if log.Name == Contract.CrossChainTransferredLogEventName && log.Address == contractAddr {
-			crossChainTransferred := new(client.CrossChainTransferred)
+		if log.Name == contract.CrossChainTransferredLogEventName && log.Address == contractAddr {
+			crossChainTransferred := new(pb.CrossChainTransferred)
 			if nonIndexedBytes, err := utils.Base64DecodeBytes(log.NonIndexed); err == nil {
 				proto.Unmarshal(nonIndexedBytes, crossChainTransferred)
 			}
@@ -283,18 +239,18 @@ func (ac *AElfClient) GetCrossChainTransferred(txId string) []*client.CrossChain
 	return crossChainTransferreds
 }
 
-func (ac *AElfClient) GetCrossChainReceived(txId string) []*client.CrossChainReceived {
-	crossChainReceiveds := make([]*client.CrossChainReceived, 0)
-	result, err := ac.GetTransactionResult(txId)
+func (c *AElfClient) GetCrossChainReceived(txId string) []*pb.CrossChainReceived {
+	crossChainReceiveds := make([]*pb.CrossChainReceived, 0)
+	result, err := c.GetTransactionResult(txId)
 	if err != nil || len(result.Logs) == 0 {
 		return crossChainReceiveds
 	}
 
-	contractAddr, _ := ac.GetContractAddressByName(Contract.TokenContractSystemName)
+	contractAddr, _ := c.GetContractAddressByName(contract.TokenContractSystemName)
 
 	for _, log := range result.Logs {
-		if log.Name == Contract.CrossChainReceivedLogEventName && log.Address == contractAddr {
-			crossChainReceived := new(client.CrossChainReceived)
+		if log.Name == contract.CrossChainReceivedLogEventName && log.Address == contractAddr {
+			crossChainReceived := new(pb.CrossChainReceived)
 			if nonIndexedBytes, err := utils.Base64DecodeBytes(log.NonIndexed); err == nil {
 				proto.Unmarshal(nonIndexedBytes, crossChainReceived)
 			}

@@ -1,7 +1,7 @@
 package types
 
-// KeyPairInfo KeyPairInfo.
-type KeyPairInfo struct {
+// KeyPair KeyPair.
+type KeyPair struct {
 	PrivateKey string
 	PublicKey  string
 	Address    string

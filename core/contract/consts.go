@@ -1,16 +1,16 @@
-package Contract
+package contract
 
 const (
-	// Contract
+	// contract
 	TokenContractSystemName      = "AElf.ContractNames.Token"
 	CrossChainContractSystemName = "AElf.ContractNames.CrossChain"
 
-	//  Contract LogEvent
+	//  contract LogEvent
 	TransferredLogEventName           = "Transferred"
 	CrossChainTransferredLogEventName = "CrossChainTransferred"
 	CrossChainReceivedLogEventName    = "CrossChainReceived"
 
-	// Contract Method
+	// contract Method
 	TokenContractGetBalance             = "GetBalance"
 	TokenContractGetTokenInfo           = "GetTokenInfo"
 	TokenContractTransfer               = "Transfer"

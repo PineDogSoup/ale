@@ -6,9 +6,11 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"github.com/btcsuite/btcutil/base58"
+	secp256 "github.com/haltingstate/secp256k1-go"
 	"reflect"
 	"unsafe"
 )
@@ -98,4 +100,12 @@ func Base64DecodeBytes(param string) ([]byte, error) {
 		fmt.Println("json Marshal error")
 	}
 	return b, nil
+}
+
+// SignWithPrivateKey Get Signature With PrivateKey.
+func SignWithPrivateKey(privateKey string, txData []byte) (string, error) {
+	privateKeyBytes, _ := hex.DecodeString(privateKey)
+	txDataBytes := sha256.Sum256(txData)
+	signatureBytes := secp256.Sign(txDataBytes[:], privateKeyBytes)
+	return hex.EncodeToString(signatureBytes), nil
 }
