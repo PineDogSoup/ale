@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -33,9 +32,6 @@ func NewHttpClient(cfg Config) *HttpClient {
 	}
 
 	return c
-}
-
-func (c *httpClusterClient) Do(ctx context.Context, act httpAction) (*http.Response, []byte, error) {
 }
 
 func (c *HttpClient) Do(method, url string, params map[string]interface{}) (*http.Response, []byte, error) {
