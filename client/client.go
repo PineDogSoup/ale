@@ -4,7 +4,6 @@ import (
 	"ale/core/types"
 	"ale/utils"
 	"encoding/hex"
-	"errors"
 	secp256 "github.com/haltingstate/secp256k1-go"
 	"math/rand"
 	"net/url"
@@ -14,12 +13,14 @@ import (
 
 // AElfClient AElf Client.
 type AElfClient struct {
-	Host       string
-	Version    string
-	PrivateKey string
-	HttpClient *utils.HttpClient
-	endpoints  []url.URL
-	rand       *rand.Rand
+	Host         string
+	Version      string
+	PrivateKey   string
+	Address      string
+	HttpClient   *utils.HttpClient
+	endpoints    []url.URL
+	rand         *rand.Rand
+	ContractInfo sync.Map
 	sync.RWMutex
 }
 
@@ -47,11 +48,8 @@ const (
 	FILEDESCRIPTOR          = "/api/blockChain/contractFileDescriptorSet"
 	CALCULATETRANSACTIONFEE = "/api/blockChain/calculateTransactionFee"
 
-	ExamplePrivateKey = "680afd630d82ae5c97942c4141d60b8a9fedfa5b2864fca84072c17ee1f72d9d"
-)
-
-var (
-	ErrNoEndpoints = errors.New("client: no endpoints available")
+	privateKeyForView = "680afd630d82ae5c97942c4141d60b8a9fedfa5b2864fca84072c17ee1f72d9d"
+	addressForView    = "SD6BXDrKT2syNd1WehtPyRo3dPBiXqfGUj8UJym7YP9W9RynM"
 )
 
 type Config struct {
@@ -63,58 +61,22 @@ type Config struct {
 
 func New(cfg *Config) (*AElfClient, error) {
 	c := &AElfClient{
+		Host:       cfg.Endpoints[0],
 		PrivateKey: cfg.PrivateKey,
 		HttpClient: utils.NewHttpClient(cfg.Version, cfg.Timeout),
 	}
-	if err := c.SetEndpoints(cfg.Endpoints); err != nil {
-		return nil, err
-	}
+
+	SetAElfClientAddress(cfg, c)
+	SetAElfClientEndpoint(cfg, c)
 	return c, nil
 }
 
-func (c *AElfClient) SetEndpoints(eps []string) error {
-	neps, err := parseEndpoints(eps)
-	if err != nil {
-		return err
+func SetAElfClientAddress(cfg *Config, client *AElfClient) {
+	if cfg.PrivateKey != "" {
+		client.Address = utils.GetAddressFromPrivateKey(cfg.PrivateKey)
 	}
-
-	c.Lock()
-	defer c.Unlock()
-
-	c.endpoints = shuffleEndpoints(c.rand, neps)
-	return nil
 }
-
-func parseEndpoints(eps []string) ([]url.URL, error) {
-	if len(eps) == 0 {
-		return []url.URL{}, ErrNoEndpoints
-	}
-
-	neps := make([]url.URL, len(eps))
-	for i, ep := range eps {
-		u, err := url.Parse(ep)
-		if err != nil {
-			return []url.URL{}, err
-		}
-		neps[i] = *u
-	}
-	return neps, nil
-}
-
-func shuffleEndpoints(r *rand.Rand, eps []url.URL) []url.URL {
-	// copied from Go 1.9<= rand.Rand.Perm
-	n := len(eps)
-	p := make([]int, n)
-	for i := 0; i < n; i++ {
-		j := r.Intn(i + 1)
-		p[i] = p[j]
-		p[j] = i
-	}
-	neps := make([]url.URL, n)
-	for i, k := range p {
-		neps[i] = eps[k]
-	}
-	return neps
+func SetAElfClientEndpoint(cfg *Config, client *AElfClient) {
 }
 
 // IsConnected Verify whether this sdk successfully connects the chain.

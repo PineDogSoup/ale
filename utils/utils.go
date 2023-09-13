@@ -109,3 +109,10 @@ func SignWithPrivateKey(privateKey string, txData []byte) (string, error) {
 	signatureBytes := secp256.Sign(txDataBytes[:], privateKeyBytes)
 	return hex.EncodeToString(signatureBytes), nil
 }
+
+// GetAddressFromPrivateKey Get the account address through the private key.
+func GetAddressFromPrivateKey(privateKey string) string {
+	bytes, _ := hex.DecodeString(privateKey)
+	pubkeyBytes := secp256.UncompressedPubkeyFromSeckey(bytes)
+	return GetAddressByBytes(pubkeyBytes)
+}

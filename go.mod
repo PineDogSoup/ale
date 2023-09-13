@@ -5,7 +5,6 @@ go 1.20
 require (
 	github.com/btcsuite/btcutil v1.0.1
 	github.com/davecgh/go-spew v1.1.1
-	github.com/dustin/go-humanize v1.0.1
 	github.com/golang/protobuf v1.5.3
 	github.com/haltingstate/secp256k1-go v0.0.0-20151224084235-572209b26df6
 	github.com/olekukonko/tablewriter v0.0.5

@@ -18,11 +18,11 @@ func initCmd() *cobra.Command {
 			return cmd.Help()
 		},
 	}
-	root.PersistentFlags().StringSliceVar(&globalFlags.Endpoints, "endpoints", []string{"127.0.0.1:8000"}, "gRPC endpoints")
+	root.PersistentFlags().StringSliceVar(&globalFlags.Endpoints, "endpoints", []string{"http://127.0.0.1:8000"}, "aelf node endpoints")
 
 	root.AddCommand(
-		command.NewCallCommand(),
-		command.NewSendCommand(),
+		//command.NewCallCommand(),
+		//command.NewSendCommand(),
 		command.NewContractInfoCommand(),
 	)
 	return root

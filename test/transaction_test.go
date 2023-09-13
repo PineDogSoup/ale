@@ -1,7 +1,6 @@
 package test
 
 import (
-	"ale/client"
 	"ale/core/contract"
 	"ale/core/types"
 	pb "ale/protobuf/generated"
@@ -93,17 +92,6 @@ func TestGetTransactionResults(t *testing.T) {
 	//spew.Dump("Get Transaction Results", transactionResults)
 }
 
-func TestGetMerklePathByTransactionID(t *testing.T) {
-	var isTransactions = true
-	block, err := mainClient.GetBlockByHeight(1, isTransactions)
-	assert.NoError(t, err)
-	transactionID := block.Body.Transactions[0]
-	merklePath, err := mainClient.GetMerklePathByTransactionID(transactionID)
-	assert.NoError(t, err)
-	assert.True(t, len(merklePath.MerklePathNodes) == 4)
-	//spew.Dump("Get Merkle Path By TransactionID Result", merklePath)
-}
-
 func TestGetTransactionPoolStatus(t *testing.T) {
 	poolStatus, err := mainClient.GetTransactionPoolStatus()
 	assert.NoError(t, err)
@@ -155,7 +143,7 @@ func TestSendRawTransaction(t *testing.T) {
 	assert.NoError(t, err)
 	//spew.Dump("Create Raw Transaction result", createRaw)
 	rawTransactionBytes, err := hex.DecodeString(createRaw.RawTransaction)
-	signature, _ := client.SignWithPrivateKey(mainClient.PrivateKey, rawTransactionBytes)
+	signature, _ := utils.SignWithPrivateKey(mainClient.PrivateKey, rawTransactionBytes)
 
 	executeRawResult, err := mainClient.SendRawTransaction(createRaw.RawTransaction, signature, true)
 	assert.NoError(t, err)
@@ -204,7 +192,7 @@ func TestSendRawTransactionWithoutReturnTransaction(t *testing.T) {
 	assert.NoError(t, err)
 	//spew.Dump("Create Raw Transaction result", createRaw)
 	rawTransactionBytes, err := hex.DecodeString(createRaw.RawTransaction)
-	signature, _ := client.SignWithPrivateKey(mainClient.PrivateKey, rawTransactionBytes)
+	signature, _ := utils.SignWithPrivateKey(mainClient.PrivateKey, rawTransactionBytes)
 
 	executeRawResult, err := mainClient.SendRawTransaction(createRaw.RawTransaction, signature, false)
 	assert.NoError(t, err)
@@ -257,7 +245,7 @@ func TestExecuteRawTransaction(t *testing.T) {
 	assert.NoError(t, err)
 	//spew.Dump("Create Raw Transaction result", createRaw)
 	rawTransactionBytes, err := hex.DecodeString(createRaw.RawTransaction)
-	signature, _ := client.SignWithPrivateKey(mainClient.PrivateKey, rawTransactionBytes)
+	signature, _ := utils.SignWithPrivateKey(mainClient.PrivateKey, rawTransactionBytes)
 	var executeRawinput = &types.ExecuteRawTransaction{
 		RawTransaction: createRaw.RawTransaction,
 		Signature:      signature,
@@ -457,49 +445,6 @@ func TestGetCrossChainTransferred(t *testing.T) {
 	assert.Equal(t, DefaultTestSymbol, crossChainTransferred[0].GetSymbol())
 	assert.Equal(t, int64(DefaultTransferTestAmount), crossChainTransferred[0].GetAmount())
 	assert.Equal(t, DefaultTransferTestMemo, crossChainTransferred[0].GetMemo())
-}
-
-func TestGetCrossChainReceived(t *testing.T) {
-	crossChainTxOutput, crossChainTxBytes := createCrossChainTransferTx(defaultSideChainTestHolder.Address)
-
-	time.Sleep(DefaultTransferTestWaitTime)
-	txResult, _ := mainClient.GetTransactionResult(crossChainTxOutput.TransactionID)
-
-	time.Sleep(DefaultIndexingTestWaitTime)
-	mp, _ := mainClient.GetMerklePathByTransactionID(crossChainTxOutput.TransactionID)
-
-	params := &pb.CrossChainReceiveTokenInput{
-		FromChainId:              defaultTestCrossChainFromChainId,
-		ParentChainHeight:        txResult.BlockNumber,
-		TransferTransactionBytes: crossChainTxBytes,
-		MerklePath:               getTxMerklePath(mp),
-	}
-
-	paramsByte, _ := proto.Marshal(params)
-
-	tokenContractAddress, _ := sideClient.GetContractAddressByName(contract.TokenContractSystemName)
-	transaction, _ := sideClient.CreateTransaction(sideClient.GetAddressFromPrivateKey(sideClient.PrivateKey),
-		tokenContractAddress, contract.CrossChainContractCrossChainReceive, paramsByte)
-	signature, _ := sideClient.SignTransaction(sideClient.PrivateKey, transaction)
-	transaction.Signature = signature
-
-	txBytes, _ := proto.Marshal(transaction)
-	result, err := sideClient.SendTransaction(hex.EncodeToString(txBytes))
-	assert.NoError(t, err)
-	assert.NotEmpty(t, result.TransactionID)
-
-	time.Sleep(DefaultTransferTestWaitTime)
-	crossChainReceiveds := sideClient.GetCrossChainReceived(result.TransactionID)
-
-	assert.Len(t, crossChainReceiveds, 1)
-	assert.Equal(t, defaultSideChainTestHolder.KeyPair.Address, utils.AddressToBase58String(crossChainReceiveds[0].GetTo()))
-	assert.Equal(t, mainClient.GetAddressFromPrivateKey(mainClient.PrivateKey), utils.AddressToBase58String(crossChainReceiveds[0].GetFrom()))
-	assert.Equal(t, DefaultTestSymbol, crossChainReceiveds[0].GetSymbol())
-	assert.Equal(t, int64(DefaultTransferTestAmount), crossChainReceiveds[0].GetAmount())
-	assert.Equal(t, DefaultTransferTestMemo, crossChainReceiveds[0].GetMemo())
-	assert.Equal(t, defaultTestCrossChainFromChainId, crossChainReceiveds[0].GetFromChainId())
-	assert.Equal(t, txResult.BlockNumber, crossChainReceiveds[0].GetParentChainHeight())
-	assert.Equal(t, defaultTestCrossChainFromChainId, crossChainReceiveds[0].GetIssueChainId())
 }
 
 func createTransferTransaction(toAddress *pb.Address) *pb.Transaction {

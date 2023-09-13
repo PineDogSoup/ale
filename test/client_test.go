@@ -5,6 +5,7 @@ import (
 	"ale/core/contract"
 	"ale/core/types"
 	pb "ale/protobuf/generated"
+	"context"
 	"encoding/base64"
 	"encoding/hex"
 	"github.com/davecgh/go-spew/spew"
@@ -17,7 +18,7 @@ import (
 
 var (
 	mainClient, _ = client.New(&client.Config{
-		Endpoints:  []string{"http://127.0.0.1:8000"},
+		Endpoints:  []string{"http://192.168.66.61:8000"},
 		Version:    "1.0",
 		PrivateKey: "cd86ab6347d8e52bbbe8532141fc59ce596268143a308d1d40fedf385528b458",
 		Timeout:    0,
@@ -122,4 +123,10 @@ func TestGetTokenInfo(t *testing.T) {
 	assert.Equal(t, DefaultTestTokenDecimals, tokenInfo.Decimals)
 	assert.Equal(t, DefaultTestTokenIsBurnable, tokenInfo.IsBurnable)
 	assert.Equal(t, DefaultTestTokenIssueChainId, tokenInfo.IssueChainId)
+}
+
+func TestGetContracts(t *testing.T) {
+	contractNames := []string{contract.TokenContractSystemName, contract.CrossChainContractSystemName}
+	contracts, _ := mainClient.GetContracts(context.Background(), contractNames)
+	assert.Equal(t, len(contracts), len(contractNames))
 }

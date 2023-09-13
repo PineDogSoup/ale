@@ -4,6 +4,8 @@ import (
 	"ale/core/contract"
 	"ale/core/types"
 	"ale/pkg/cobrautl"
+	"ale/utils"
+	"context"
 	"fmt"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
@@ -11,7 +13,17 @@ import (
 )
 
 var (
-	contractNameList = []string{contract.TokenContractSystemName, contract.CrossChainContractSystemName}
+	contractNameList = []string{
+		contract.TokenContractSystemName,
+		contract.CrossChainContractSystemName,
+		contract.ForestContractSystemName,
+		contract.EconomicContractSystemName,
+		contract.ProfitContractSystemName,
+		contract.TreasuryContractSystemName,
+		contract.ElectionContractSystemName,
+		contract.VoteContractSystemName,
+		contract.ConsensusContractSystemName,
+	}
 )
 
 func NewContractInfoCommand() *cobra.Command {
@@ -23,9 +35,9 @@ func NewContractInfoCommand() *cobra.Command {
 }
 
 func contractInfoCommandFunc(cmd *cobra.Command, args []string) {
-	ctx, cancel := commandCtx(cmd)
-	resp, err := mustClientFromCmd(cmd).GetContracts(ctx, contractNameList)
-	cancel()
+	//ctx, cancel := context.WithTimeout(context.Background(), DefaultContextTimeOut)
+	resp, err := mustClientFromCmd(cmd).GetContracts(context.Background(), contractNameList)
+	//cancel()
 	if err != nil {
 		cobrautl.ExitWithError(cobrautl.ExitError, err)
 	}
@@ -33,16 +45,15 @@ func contractInfoCommandFunc(cmd *cobra.Command, args []string) {
 	contractInfos(resp)
 }
 
-func contractInfos(contractInfos []*types.ContractInfo) {
+func contractInfos(contractInfos map[string]*types.ContractInfo) {
 	var rows [][]string
-	hdr := []string{"contract name", "version", "author", "address", "isSystemContract"}
-	for _, contract := range contractInfos {
+	hdr := []string{"contract name", "version", "author", "contract address"}
+	for name, contract := range contractInfos {
 		rows = append(rows, []string{
-			contract.ContractName,
-			fmt.Sprintf("%x", contract.Info.Version),
-			fmt.Sprint(contract.Info.Author),
+			name,
+			fmt.Sprintf(contract.Info.ContractVersion),
+			fmt.Sprint(utils.AddressToBase58String(contract.Info.Author)),
 			fmt.Sprint(contract.Address),
-			fmt.Sprint(contract.Info.IsSystemContract),
 		})
 	}
 	table := tablewriter.NewWriter(os.Stdout)

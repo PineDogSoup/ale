@@ -5,6 +5,11 @@ import (
 	"ale/pkg/cobrautl"
 	"github.com/spf13/cobra"
 	"strings"
+	"time"
+)
+
+const (
+	DefaultContextTimeOut = 15 * time.Second
 )
 
 type GlobalFlags struct {
@@ -22,10 +27,6 @@ func mustClientFromCmd(cmd *cobra.Command) *client.AElfClient {
 		}
 	}
 	cfg.Endpoints = eps
-	if err != nil {
-		cobrautl.ExitWithError(cobrautl.ExitError, err)
-	}
-
 	c, err := client.New(cfg)
 	if err != nil {
 		cobrautl.ExitWithError(cobrautl.ExitBadConnection, err)

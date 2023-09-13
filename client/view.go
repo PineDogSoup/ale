@@ -12,6 +12,7 @@ import (
 	wrap "github.com/golang/protobuf/ptypes/wrappers"
 	secp256 "github.com/haltingstate/secp256k1-go"
 	"google.golang.org/protobuf/proto"
+	"sync"
 )
 
 // GetAddressFromPubKey Get the account address through the public key.
@@ -31,10 +32,10 @@ func (c *AElfClient) GetAddressFromPrivateKey(privateKey string) string {
 func (c *AElfClient) GetFormattedAddress(address string) (string, error) {
 	chain, _ := c.GetChainStatus()
 	methodName := "GetPrimaryTokenSymbol"
-	fromAddress := c.GetAddressFromPrivateKey(ExamplePrivateKey)
+	fromAddress := c.GetAddressFromPrivateKey(privateKeyForView)
 	contractAddress, _ := c.GetContractAddressByName("AElf.ContractNames.Token")
 	transaction, _ := c.CreateTransaction(fromAddress, contractAddress, methodName, nil)
-	signature, _ := c.SignTransaction(ExamplePrivateKey, transaction)
+	signature, _ := c.SignTransaction(privateKeyForView, transaction)
 	transaction.Signature = signature
 	transactionBytes, err := proto.Marshal(transaction)
 	if err != nil {
@@ -96,18 +97,15 @@ func (c *AElfClient) GetTokenInfo(symbol string) (*pb.TokenInfo, error) {
 
 // GetContractAddressByName Get  contract address by contract name.
 func (c *AElfClient) GetContractAddressByName(contractName string) (string, error) {
-	fromAddress := c.GetAddressFromPrivateKey(ExamplePrivateKey)
 	toAddress, err := c.GetGenesisContractAddress()
 	if err != nil {
 		return "", errors.New("Get Genesis contract Address error")
 	}
-	contractNameBytes := utils.GetBytesSha256(contractName)
-	var hash = new(pb.Hash)
-	hash.Value = contractNameBytes
-	hashBytes, _ := proto.Marshal(hash)
 
-	transaction, _ := c.CreateTransaction(fromAddress, toAddress, "GetContractAddressByName", hashBytes)
-	signature, _ := c.SignTransaction(ExamplePrivateKey, transaction)
+	hashBytes, _ := proto.Marshal(&pb.Hash{Value: utils.GetBytesSha256(contractName)})
+
+	transaction, _ := c.CreateTransaction(utils.GetAddressFromPrivateKey(privateKeyForView), toAddress, "GetContractAddressByName", hashBytes)
+	signature, _ := c.SignTransaction(privateKeyForView, transaction)
 	transaction.Signature = signature
 	transactionBytes, err := proto.Marshal(transaction)
 	if err != nil {
@@ -118,6 +116,47 @@ func (c *AElfClient) GetContractAddressByName(contractName string) (string, erro
 	resultBytes, err := hex.DecodeString(result)
 	proto.Unmarshal(resultBytes, address)
 	return utils.EncodeCheck(address.Value), nil
+}
+
+func (c *AElfClient) GetContractInfoByAddress(address string) (*pb.ContractInfo, error) {
+	res := new(pb.ContractInfo)
+	toAddress, err := c.GetGenesisContractAddress()
+	if err != nil {
+		return res, errors.New("Get Genesis contract Address error")
+	}
+
+	addr, _ := utils.Base58StringToAddress(address)
+	addrBytes, _ := proto.Marshal(addr)
+	transaction, err := c.CreateTransaction(utils.GetAddressFromPrivateKey(privateKeyForView), toAddress, "GetContractInfo", addrBytes)
+	if err != nil {
+		return res, errors.New("Create Transaction error" + err.Error())
+	}
+
+	signature, _ := c.SignTransaction(privateKeyForView, transaction)
+	if err != nil {
+		return res, errors.New("Sign Transaction error" + err.Error())
+	}
+	transaction.Signature = signature
+	transactionBytes, err := proto.Marshal(transaction)
+	if err != nil {
+		return res, errors.New("proto marshasl transaction error" + err.Error())
+	}
+
+	result, err := c.ExecuteTransaction(hex.EncodeToString(transactionBytes))
+	if err != nil {
+		return res, errors.New("Execute Transaction error" + err.Error())
+	}
+
+	resultBytes, err := hex.DecodeString(result)
+	if err != nil {
+		return res, errors.New("Decode error" + err.Error())
+	}
+
+	err = proto.Unmarshal(resultBytes, res)
+	if err != nil {
+		return res, errors.New("Unmarshal error" + err.Error())
+	}
+	return res, nil
 }
 
 // GetGenesisContractAddress Get the address of genesis contract.
@@ -187,41 +226,58 @@ func (c *AElfClient) GetTransactionResults(blockHash string, offset, limit int) 
 	return transactions, nil
 }
 
-func (c *AElfClient) GetContracts(ctx context.Context, contractNames []string) ([]*types.ContractInfo, error) {
-	var res []*types.ContractInfo
-	fromAddress := c.GetAddressFromPrivateKey(ExamplePrivateKey)
-	toAddress, err := c.GetGenesisContractAddress()
-	if err != nil {
-		return res, errors.New("Get Genesis contract Address error")
+func (c *AElfClient) GetContracts(ctx context.Context, contractNames []string) (map[string]*types.ContractInfo, error) {
+	var res sync.Map
+	var wg sync.WaitGroup
+	wg.Add(len(contractNames))
+
+	for i := range contractNames {
+		go func(index int) {
+			defer wg.Done()
+
+			contractName := contractNames[index]
+			addrStr, err := c.GetContractAddressByName(contractName)
+			if err != nil {
+				return
+			}
+			ci, err := c.GetContractInfoByAddress(addrStr)
+			if err != nil {
+				return
+			}
+			res.Store(contractName, &types.ContractInfo{
+				Info:    ci,
+				Address: addrStr,
+			})
+		}(i)
 	}
 
-	for _, contractName := range contractNames {
-		go func(contractName string) {
+	wg.Wait()
 
-		}(contractName)
-		var hash = new(pb.Hash)
-		hash.Value = utils.GetBytesSha256(contractName)
-		hashBytes, _ := proto.Marshal(hash)
+	contracts := make(map[string]*types.ContractInfo)
+	res.Range(func(key, value any) bool {
+		contracts[key.(string)] = value.(*types.ContractInfo)
+		return true
+	})
+	return contracts, nil
+}
 
-		transaction, _ := c.CreateTransaction(fromAddress, toAddress, "GetContractAddressByName", hashBytes)
-		transaction.Signature, _ = c.SignTransaction(ExamplePrivateKey, transaction)
-
-		transactionBytes, err := proto.Marshal(transaction)
-		if err != nil {
-			return res, errors.New("proto marshasl transaction error" + err.Error())
-		}
-		result, _ := c.ExecuteTransaction(hex.EncodeToString(transactionBytes))
-		var contractInfo = new(pb.ContractInfo)
-		resultBytes, err := hex.DecodeString(result)
-		proto.Unmarshal(resultBytes, contractInfo)
-
-		addr, _ := c.GetContractAddressByName(contractName)
-
-		res = append(res, &types.ContractInfo{
-			ContractName: contractName,
-			Info:         contractInfo,
-			Address:      addr,
-		})
+func (c *AElfClient) GetContractInfo(contractName string) *types.ContractInfo {
+	if name, ok := c.ContractInfo.Load(contractName); ok {
+		return name.(*types.ContractInfo)
 	}
-	return res, nil
+
+	if contractName == contract.GenesisContractSystemName {
+		genesisContractAddr, _ := c.GetGenesisContractAddress()
+		c.ContractInfo.Store(contractName, &types.ContractInfo{Address: genesisContractAddr})
+	}
+
+	addr, _ := c.GetContractAddressByName(contractName)
+	info, _ := c.GetContractInfoByAddress(addr)
+	c.ContractInfo.Store(contractName, &types.ContractInfo{
+		Info:    info,
+		Address: addr,
+	})
+
+	res, _ := c.ContractInfo.Load(contractName)
+	return res.(*types.ContractInfo)
 }
