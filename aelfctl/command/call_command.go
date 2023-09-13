@@ -10,8 +10,9 @@ import (
 
 func NewCallCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "call",
-		Run: callCommandFunc,
+		Use:   "call [options] <methodName> <inputString>",
+		Short: "Call contract method name with contract method input by string.",
+		Run:   callCommandFunc,
 	}
 	return cmd
 }

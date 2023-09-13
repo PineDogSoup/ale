@@ -1,19 +1,3 @@
-// Copyright 2015 The etcd Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-// copied from https://github.com/rkt/rkt/blob/master/rkt/help.go
-
 package cobrautl
 
 import (
@@ -62,17 +46,6 @@ USAGE:
 {{printf "\t%s" .Cmd.UseLine}}
 {{ if not .Cmd.HasParent }}\
 
-VERSION:
-{{printf "\t%s" .Version}}
-{{end}}\
-{{if .Cmd.HasSubCommands}}\
-
-API VERSION:
-{{printf "\t%s" .APIVersion}}
-{{end}}\
-{{if .Cmd.HasSubCommands}}\
-
-
 COMMANDS:
 {{range .SubCommands}}\
 {{ $cmdname := cmdName . $cmd }}\
@@ -102,7 +75,7 @@ GLOBAL OPTIONS:
 	commandUsageTemplate = template.Must(template.New("command_usage").Funcs(templFuncs).Parse(strings.ReplaceAll(commandUsage, "\\\n", "")))
 }
 
-func etcdFlagUsages(flagSet *pflag.FlagSet) string {
+func aelfFlagUsages(flagSet *pflag.FlagSet) string {
 	x := new(bytes.Buffer)
 
 	flagSet.VisitAll(func(flag *pflag.Flag) {
@@ -139,7 +112,6 @@ func getSubCommands(cmd *cobra.Command) []*cobra.Command {
 	var subCommands []*cobra.Command
 	for _, subCmd := range cmd.Commands() {
 		subCommands = append(subCommands, subCmd)
-		subCommands = append(subCommands, getSubCommands(subCmd)...)
 	}
 	return subCommands
 }
@@ -154,8 +126,8 @@ func UsageFunc(cmd *cobra.Command) error {
 		SubCommands []*cobra.Command
 	}{
 		cmd,
-		etcdFlagUsages(cmd.LocalFlags()),
-		etcdFlagUsages(cmd.InheritedFlags()),
+		aelfFlagUsages(cmd.LocalFlags()),
+		aelfFlagUsages(cmd.InheritedFlags()),
 		subCommands,
 	})
 	tabOut.Flush()

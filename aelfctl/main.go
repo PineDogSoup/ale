@@ -12,8 +12,9 @@ var (
 
 func initCmd() *cobra.Command {
 	root := &cobra.Command{
-		Use:   "aelfctl",
-		Short: "aelf ctl",
+		Use:        "aelfctl",
+		Short:      "A simple command line go sdk client for AELF",
+		SuggestFor: []string{"aelfctl"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
 		},
@@ -21,7 +22,7 @@ func initCmd() *cobra.Command {
 	root.PersistentFlags().StringSliceVar(&globalFlags.Endpoints, "endpoints", []string{"http://127.0.0.1:8000"}, "aelf node endpoints")
 
 	root.AddCommand(
-		//command.NewCallCommand(),
+		command.NewCallCommand(),
 		command.NewSendCommand(),
 		command.NewContractInfoCommand(),
 	)

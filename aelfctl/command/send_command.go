@@ -10,12 +10,9 @@ import (
 
 func NewSendCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "send",
-		Run: sendCommandFunc,
-		Long: `
-When <value> begins with '-', <value> is interpreted as a flag.
-Insert '--' for workaround:
-`,
+		Use:   "send [options] <methodName> <inputString>",
+		Short: "Send transaction with contract method input by string.",
+		Run:   sendCommandFunc,
 	}
 	return cmd
 }

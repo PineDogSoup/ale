@@ -28,8 +28,9 @@ var (
 
 func NewContractInfoCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "contracts",
-		Run: contractInfoCommandFunc,
+		Use:   "contracts [options]",
+		Short: "Get the default contract ContractName & ContractVersion & Author & ContractAddress",
+		Run:   contractInfoCommandFunc,
 	}
 	return cmd
 }
