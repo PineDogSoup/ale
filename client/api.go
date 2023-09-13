@@ -11,6 +11,34 @@ import (
 	"github.com/btcsuite/btcutil/base58"
 )
 
+// const const.
+const (
+	CHAINSTATUS             = "/api/blockChain/chainStatus"
+	BLOCKHEIGHT             = "/api/blockChain/blockHeight"
+	BLOCKBYHASH             = "/api/blockChain/block"
+	BLOCKBYHEIGHT           = "/api/blockChain/blockByHeight"
+	TRANSACTIONPOOLSTATUS   = "/api/blockChain/transactionPoolStatus"
+	RAWTRANSACTION          = "/api/blockChain/rawTransaction"
+	SENDTRANSACTION         = "/api/blockChain/sendTransaction"
+	SENDRAWTRANSACTION      = "/api/blockChain/sendRawTransaction"
+	TASKQUEUESTATUS         = "/api/blockChain/taskQueueStatus"
+	TRANSACTIONRESULT       = "/api/blockChain/transactionResult"
+	TRANSACTIONRESULTS      = "/api/blockChain/transactionResults"
+	MBYTRANSACTIONID        = "/api/blockChain/merklePathByTransactionId"
+	ADDPEER                 = "/api/net/peer"
+	REMOVEPEER              = "/api/net/peer"
+	PEERS                   = "/api/net/peers"
+	NETWORKINFO             = "/api/net/networkInfo"
+	SENDTRANSACTIONS        = "/api/blockChain/sendTransactions"
+	EXECUTETRANSACTION      = "/api/blockChain/executeTransaction"
+	EXECUTERAWTRANSACTION   = "/api/blockChain/executeRawTransaction"
+	FILEDESCRIPTOR          = "/api/blockChain/contractFileDescriptorSet"
+	CALCULATETRANSACTIONFEE = "/api/blockChain/calculateTransactionFee"
+
+	privateKeyForView = "680afd630d82ae5c97942c4141d60b8a9fedfa5b2864fca84072c17ee1f72d9d"
+	addressForView    = "SD6BXDrKT2syNd1WehtPyRo3dPBiXqfGUj8UJym7YP9W9RynM"
+)
+
 type AElfAPI interface {
 	GetChainStatus() (*types.ChainStatus, error)
 	GetContractFileDescriptorSet(address string) ([]byte, error)

@@ -22,7 +22,7 @@ func initCmd() *cobra.Command {
 
 	root.AddCommand(
 		//command.NewCallCommand(),
-		//command.NewSendCommand(),
+		command.NewSendCommand(),
 		command.NewContractInfoCommand(),
 	)
 	return root

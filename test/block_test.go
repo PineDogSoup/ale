@@ -8,18 +8,18 @@ import (
 )
 
 func TestGetBlockHeight(t *testing.T) {
-	height, err := mainClient.GetBlockHeight()
+	height, err := mainClient.AElf.GetBlockHeight()
 	assert.NoError(t, err)
 	assert.True(t, height > 0)
 }
 
 func TestGetBlock(t *testing.T) {
-	height, err := mainClient.GetBlockHeight()
+	height, err := mainClient.AElf.GetBlockHeight()
 
-	blockByHeight, err := mainClient.GetBlockByHeight(height, false)
+	blockByHeight, err := mainClient.AElf.GetBlockByHeight(height, false)
 	assert.NoError(t, err)
 
-	blockByHash, err := mainClient.GetBlockByHash(blockByHeight.BlockHash, false)
+	blockByHash, err := mainClient.AElf.GetBlockByHash(blockByHeight.BlockHash, false)
 	assert.NoError(t, err)
 
 	assert.Equal(t, blockByHeight, blockByHash)
@@ -39,19 +39,19 @@ func TestGetBlock(t *testing.T) {
 	assert.True(t, blockByHeight.Body.TransactionsCount > 0)
 	assert.Equal(t, 0, len(blockByHeight.Body.Transactions))
 
-	previousBlock, err := mainClient.GetBlockByHash(blockByHeight.Header.PreviousBlockHash, false)
+	previousBlock, err := mainClient.AElf.GetBlockByHash(blockByHeight.Header.PreviousBlockHash, false)
 	assert.NoError(t, err)
 	assert.Equal(t, previousBlock.BlockHash, blockByHeight.Header.PreviousBlockHash)
 	assert.Equal(t, previousBlock.Header.Height, blockByHeight.Header.Height-1)
 }
 
 func TestGetBlockWithTransaction(t *testing.T) {
-	height, err := mainClient.GetBlockHeight()
+	height, err := mainClient.AElf.GetBlockHeight()
 
-	blockByHeight, err := mainClient.GetBlockByHeight(height, true)
+	blockByHeight, err := mainClient.AElf.GetBlockByHeight(height, true)
 	assert.NoError(t, err)
 
-	blockByHash, err := mainClient.GetBlockByHash(blockByHeight.BlockHash, true)
+	blockByHash, err := mainClient.AElf.GetBlockByHash(blockByHeight.BlockHash, true)
 	assert.NoError(t, err)
 
 	assert.Equal(t, blockByHeight, blockByHash)
@@ -73,7 +73,7 @@ func TestGetBlockWithTransaction(t *testing.T) {
 		assert.NotEmpty(t, tx)
 	}
 
-	previousBlock, err := mainClient.GetBlockByHash(blockByHeight.Header.PreviousBlockHash, true)
+	previousBlock, err := mainClient.AElf.GetBlockByHash(blockByHeight.Header.PreviousBlockHash, true)
 	assert.NoError(t, err)
 	assert.Equal(t, previousBlock.BlockHash, blockByHeight.Header.PreviousBlockHash)
 	assert.Equal(t, previousBlock.Header.Height, blockByHeight.Header.Height-1)

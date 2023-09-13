@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"ale/core/types"
 	pb "ale/protobuf/generated"
 	"bytes"
 	"crypto/sha256"
@@ -115,4 +116,18 @@ func GetAddressFromPrivateKey(privateKey string) string {
 	bytes, _ := hex.DecodeString(privateKey)
 	pubkeyBytes := secp256.UncompressedPubkeyFromSeckey(bytes)
 	return GetAddressByBytes(pubkeyBytes)
+}
+
+// GenerateKeyPairInfo Generate KeyPair Info.
+func GenerateKeyPairInfo() *types.KeyPair {
+	publicKeyBytes, privateKeyBytes := secp256.GenerateKeyPair()
+	publicKey := hex.EncodeToString(publicKeyBytes)
+	privateKey := hex.EncodeToString(privateKeyBytes)
+	privateKeyAddress := GetAddressFromPrivateKey(privateKey)
+	var keyPair = &types.KeyPair{
+		PrivateKey: privateKey,
+		PublicKey:  publicKey,
+		Address:    privateKeyAddress,
+	}
+	return keyPair
 }

@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	ContractAddress, _               = mainClient.GetGenesisContractAddress()
+	ContractAddress, _               = mainClient.AElf.GetGenesisContractAddress()
 	defaultTestHolder                = getDefaultTestHolder(true)
 	defaultSideChainTestHolder       = getDefaultTestHolder(false)
 	defaultTestCrossChainFromChainId = utils.ConvertBase58ToChainId(DefaultMainChain)
@@ -47,9 +47,9 @@ type TestHolder struct {
 }
 
 func getDefaultTestHolder(isMainChain bool) *TestHolder {
-	userKeyPairInfo := mainClient.GenerateKeyPairInfo()
+	userKeyPairInfo := utils.GenerateKeyPairInfo()
 	if isMainChain == false {
-		userKeyPairInfo = sideClient.GenerateKeyPairInfo()
+		userKeyPairInfo = utils.GenerateKeyPairInfo()
 	}
 	toAddress, _ := utils.Base58StringToAddress(userKeyPairInfo.Address)
 	return &TestHolder{
@@ -60,11 +60,11 @@ func getDefaultTestHolder(isMainChain bool) *TestHolder {
 
 func TestGetTransactionResult(t *testing.T) {
 	var isTransactions = true
-	height, err := mainClient.GetBlockHeight()
-	block, err := mainClient.GetBlockByHeight(height, isTransactions)
+	height, err := mainClient.AElf.GetBlockHeight()
+	block, err := mainClient.AElf.GetBlockByHeight(height, isTransactions)
 	assert.NoError(t, err)
 	transactionID := block.Body.Transactions[0]
-	transactionResult, err := mainClient.GetTransactionResult(transactionID)
+	transactionResult, err := mainClient.AElf.GetTransactionResult(transactionID)
 	assert.NoError(t, err)
 	assert.Equal(t, transactionID, transactionResult.TransactionId)
 	assert.Equal(t, "MINED", transactionResult.Status)
@@ -77,9 +77,9 @@ func TestGetTransactionResult(t *testing.T) {
 
 func TestGetTransactionResults(t *testing.T) {
 	var isTransactions = true
-	block, err := mainClient.GetBlockByHeight(1, isTransactions)
+	block, err := mainClient.AElf.GetBlockByHeight(1, isTransactions)
 	assert.NoError(t, err)
-	transactionResults, err := mainClient.GetTransactionResults(block.BlockHash, 0, 10)
+	transactionResults, err := mainClient.AElf.GetTransactionResults(block.BlockHash, 0, 10)
 	assert.NoError(t, err)
 	assert.Equal(t, 10, len(transactionResults))
 	for _, txResult := range transactionResults {
@@ -93,13 +93,13 @@ func TestGetTransactionResults(t *testing.T) {
 }
 
 func TestGetTransactionPoolStatus(t *testing.T) {
-	poolStatus, err := mainClient.GetTransactionPoolStatus()
+	poolStatus, err := mainClient.AElf.GetTransactionPoolStatus()
 	assert.NoError(t, err)
 	spew.Dump("Get TransactionPool Status Result", poolStatus)
 }
 
 func TestCreateRawTransaction(t *testing.T) {
-	chainStatus, err := mainClient.GetChainStatus()
+	chainStatus, err := mainClient.AElf.GetChainStatus()
 	assert.NoError(t, err)
 	params := &pb.Hash{
 		Value: utils.GetBytesSha256(contract.TokenContractSystemName),
@@ -113,15 +113,15 @@ func TestCreateRawTransaction(t *testing.T) {
 		RefBlockHash:   chainStatus.BestChainHash,
 		RefBlockNumber: chainStatus.BestChainHeight,
 	}
-	result, err := mainClient.CreateRawTransaction(input)
+	result, err := mainClient.AElf.CreateRawTransaction(input)
 	assert.NoError(t, err)
 	spew.Dump("Create RawTransaction result", result)
 }
 
 func TestSendRawTransaction(t *testing.T) {
-	chainStatus, err := mainClient.GetChainStatus()
-	tokenContractAddress, _ := mainClient.GetContractAddressByName(contract.TokenContractSystemName)
-	userKeyPairInfo := mainClient.GenerateKeyPairInfo()
+	chainStatus, err := mainClient.AElf.GetChainStatus()
+	tokenContractAddress, _ := mainClient.AElf.GetContractAddressByName(contract.TokenContractSystemName)
+	userKeyPairInfo := utils.GenerateKeyPairInfo()
 	toAddress, _ := utils.Base58StringToAddress(userKeyPairInfo.Address)
 	params := &pb.TransferInput{
 		To:     toAddress,
@@ -139,13 +139,13 @@ func TestSendRawTransaction(t *testing.T) {
 		RefBlockHash:   chainStatus.BestChainHash,
 		Params:         string(paramsByte),
 	}
-	createRaw, err := mainClient.CreateRawTransaction(input)
+	createRaw, err := mainClient.AElf.CreateRawTransaction(input)
 	assert.NoError(t, err)
 	//spew.Dump("Create Raw Transaction result", createRaw)
 	rawTransactionBytes, err := hex.DecodeString(createRaw.RawTransaction)
-	signature, _ := utils.SignWithPrivateKey(mainClient.PrivateKey, rawTransactionBytes)
+	signature, _ := utils.SignWithPrivateKey(mainClient.AElf.PrivateKey, rawTransactionBytes)
 
-	executeRawResult, err := mainClient.SendRawTransaction(createRaw.RawTransaction, signature, true)
+	executeRawResult, err := mainClient.AElf.SendRawTransaction(createRaw.RawTransaction, signature, true)
 	assert.NoError(t, err)
 	//spew.Dump("Send Raw Transaction result", executeRawResult)
 	assert.NotEmpty(t, executeRawResult.TransactionId)
@@ -161,16 +161,16 @@ func TestSendRawTransaction(t *testing.T) {
 
 	time.Sleep(DefaultTransferTestWaitTime)
 
-	balance, _ := mainClient.GetTokenBalance(DefaultTestSymbol, userKeyPairInfo.Address)
+	balance, _ := mainClient.AElf.GetTokenBalance(DefaultTestSymbol, userKeyPairInfo.Address)
 	assert.Equal(t, "ELF", balance.Symbol)
 	assert.Equal(t, toAddress.Value, balance.Owner.Value)
 	assert.Equal(t, int64(DefaultTransferTestAmount), balance.Balance)
 }
 
 func TestSendRawTransactionWithoutReturnTransaction(t *testing.T) {
-	chainStatus, err := mainClient.GetChainStatus()
-	tokenContractAddress, _ := mainClient.GetContractAddressByName(contract.TokenContractSystemName)
-	userKeyPairInfo := mainClient.GenerateKeyPairInfo()
+	chainStatus, err := mainClient.AElf.GetChainStatus()
+	tokenContractAddress, _ := mainClient.AElf.GetContractAddressByName(contract.TokenContractSystemName)
+	userKeyPairInfo := utils.GenerateKeyPairInfo()
 	toAddress, _ := utils.Base58StringToAddress(userKeyPairInfo.Address)
 	params := &pb.TransferInput{
 		To:     toAddress,
@@ -188,13 +188,13 @@ func TestSendRawTransactionWithoutReturnTransaction(t *testing.T) {
 		RefBlockHash:   chainStatus.BestChainHash,
 		Params:         string(paramsByte),
 	}
-	createRaw, err := mainClient.CreateRawTransaction(input)
+	createRaw, err := mainClient.AElf.CreateRawTransaction(input)
 	assert.NoError(t, err)
 	//spew.Dump("Create Raw Transaction result", createRaw)
 	rawTransactionBytes, err := hex.DecodeString(createRaw.RawTransaction)
-	signature, _ := utils.SignWithPrivateKey(mainClient.PrivateKey, rawTransactionBytes)
+	signature, _ := utils.SignWithPrivateKey(mainClient.AElf.PrivateKey, rawTransactionBytes)
 
-	executeRawResult, err := mainClient.SendRawTransaction(createRaw.RawTransaction, signature, false)
+	executeRawResult, err := mainClient.AElf.SendRawTransaction(createRaw.RawTransaction, signature, false)
 	assert.NoError(t, err)
 	//spew.Dump("Send Raw Transaction result", executeRawResult)
 	assert.NotEmpty(t, executeRawResult.TransactionId)
@@ -208,20 +208,20 @@ func TestSendRawTransactionWithoutReturnTransaction(t *testing.T) {
 
 	time.Sleep(DefaultTransferTestWaitTime)
 
-	balance, _ := mainClient.GetTokenBalance(DefaultTestSymbol, userKeyPairInfo.Address)
+	balance, _ := mainClient.AElf.GetTokenBalance(DefaultTestSymbol, userKeyPairInfo.Address)
 	assert.Equal(t, DefaultTestSymbol, balance.Symbol)
 	assert.Equal(t, toAddress.Value, balance.Owner.Value)
 	assert.Equal(t, int64(1000000000), balance.Balance)
 }
 
 func TestExecuteRawTransaction(t *testing.T) {
-	chainStatus, err := mainClient.GetChainStatus()
-	tokenContractAddress, _ := mainClient.GetContractAddressByName(contract.TokenContractSystemName)
-	userKeyPairInfo := mainClient.GenerateKeyPairInfo()
+	chainStatus, err := mainClient.AElf.GetChainStatus()
+	tokenContractAddress, _ := mainClient.AElf.GetContractAddressByName(contract.TokenContractSystemName)
+	userKeyPairInfo := utils.GenerateKeyPairInfo()
 	toAddress, _ := utils.Base58StringToAddress(userKeyPairInfo.Address)
 	transaction := createTransferTransaction(toAddress)
 	transactionByets, _ := proto.Marshal(transaction)
-	sendResult, err := mainClient.SendTransaction(hex.EncodeToString(transactionByets))
+	sendResult, err := mainClient.AElf.SendTransaction(hex.EncodeToString(transactionByets))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, sendResult.TransactionID)
 
@@ -241,16 +241,16 @@ func TestExecuteRawTransaction(t *testing.T) {
 		RefBlockHash:   chainStatus.BestChainHash,
 		Params:         string(paramsByte),
 	}
-	createRaw, err := mainClient.CreateRawTransaction(input)
+	createRaw, err := mainClient.AElf.CreateRawTransaction(input)
 	assert.NoError(t, err)
 	//spew.Dump("Create Raw Transaction result", createRaw)
 	rawTransactionBytes, err := hex.DecodeString(createRaw.RawTransaction)
-	signature, _ := utils.SignWithPrivateKey(mainClient.PrivateKey, rawTransactionBytes)
+	signature, _ := utils.SignWithPrivateKey(mainClient.AElf.PrivateKey, rawTransactionBytes)
 	var executeRawinput = &types.ExecuteRawTransaction{
 		RawTransaction: createRaw.RawTransaction,
 		Signature:      signature,
 	}
-	executeRawresult, err := mainClient.ExecuteRawTransaction(executeRawinput)
+	executeRawresult, err := mainClient.AElf.ExecuteRawTransaction(executeRawinput)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "{ \"symbol\": \"ELF\", \"owner\": \""+userKeyPairInfo.Address+"\", \"balance\": \"1000000000\" }", executeRawresult)
@@ -258,21 +258,21 @@ func TestExecuteRawTransaction(t *testing.T) {
 
 func TestSendTransaction(t *testing.T) {
 	// Get token contract address.
-	tokenContractAddress, _ := mainClient.GetContractAddressByName(contract.TokenContractSystemName)
-	fromAddress := mainClient.GetAddressFromPrivateKey(mainClient.PrivateKey)
-	userKeyPairInfo := mainClient.GenerateKeyPairInfo()
+	tokenContractAddress, _ := mainClient.AElf.GetContractAddressByName(contract.TokenContractSystemName)
+	fromAddress := mainClient.AElf.GetAddressFromPrivateKey(mainClient.AElf.PrivateKey)
+	userKeyPairInfo := utils.GenerateKeyPairInfo()
 	toAddress, _ := utils.Base58StringToAddress(userKeyPairInfo.Address)
 	transaction := createTransferTransaction(toAddress)
 
 	// Send the transfer transaction to AElf chain node.
 	transactionByets, _ := proto.Marshal(transaction)
-	sendResult, err := mainClient.SendTransaction(hex.EncodeToString(transactionByets))
+	sendResult, err := mainClient.AElf.SendTransaction(hex.EncodeToString(transactionByets))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, sendResult.TransactionID)
 
 	time.Sleep(DefaultTransferTestWaitTime)
 
-	transactionResult, err := mainClient.GetTransactionResult(sendResult.TransactionID)
+	transactionResult, err := mainClient.AElf.GetTransactionResult(sendResult.TransactionID)
 	//spew.Dump("Create Raw Transaction result", transactionResult)
 	assert.NoError(t, err)
 	assert.Equal(t, sendResult.TransactionID, transactionResult.TransactionId)
@@ -314,9 +314,9 @@ func TestSendTransaction(t *testing.T) {
 }
 
 func TestSendFailedTransaction(t *testing.T) {
-	tokenContractAddress, _ := mainClient.GetContractAddressByName(contract.TokenContractSystemName)
-	toAddress, _ := utils.Base58StringToAddress(mainClient.GetAddressFromPrivateKey(mainClient.PrivateKey))
-	userKeyPairInfo := mainClient.GenerateKeyPairInfo()
+	tokenContractAddress, _ := mainClient.AElf.GetContractAddressByName(contract.TokenContractSystemName)
+	toAddress, _ := utils.Base58StringToAddress(mainClient.AElf.GetAddressFromPrivateKey(mainClient.AElf.PrivateKey))
+	userKeyPairInfo := utils.GenerateKeyPairInfo()
 	methodName := contract.TokenContractTransfer
 
 	params := &pb.TransferInput{
@@ -327,38 +327,38 @@ func TestSendFailedTransaction(t *testing.T) {
 	}
 	paramsByte, _ := proto.Marshal(params)
 
-	transaction, err := mainClient.CreateTransaction(userKeyPairInfo.Address, tokenContractAddress, methodName, paramsByte)
+	transaction, err := mainClient.AElf.CreateTransaction(userKeyPairInfo.Address, tokenContractAddress, methodName, paramsByte)
 
-	signature, _ := mainClient.SignTransaction(userKeyPairInfo.PrivateKey, transaction)
+	signature, _ := mainClient.AElf.SignTransaction(userKeyPairInfo.PrivateKey, transaction)
 	transaction.Signature = signature
 
 	transactionByets, _ := proto.Marshal(transaction)
-	sendResult, err := mainClient.SendTransaction(hex.EncodeToString(transactionByets))
+	sendResult, err := mainClient.AElf.SendTransaction(hex.EncodeToString(transactionByets))
 
 	assert.NoError(t, err)
 	assert.NotEmpty(t, sendResult.TransactionID)
 
 	time.Sleep(DefaultTransferTestWaitTime)
 
-	transactionResult, err := mainClient.GetTransactionResult(sendResult.TransactionID)
+	transactionResult, err := mainClient.AElf.GetTransactionResult(sendResult.TransactionID)
 	assert.NoError(t, err)
 	assert.Equal(t, "NODEVALIDATIONFAILED", transactionResult.Status)
 	assert.Equal(t, "Pre-Error: Transaction fee not enough.", transactionResult.Error)
 }
 
 func TestExecuteTransaction(t *testing.T) {
-	userKeyPairInfo := mainClient.GenerateKeyPairInfo()
+	userKeyPairInfo := utils.GenerateKeyPairInfo()
 	toAddress, _ := utils.Base58StringToAddress(userKeyPairInfo.Address)
 	transaction := createTransferTransaction(toAddress)
 
 	transactionByets, _ := proto.Marshal(transaction)
-	sendResult, err := mainClient.SendTransaction(hex.EncodeToString(transactionByets))
+	sendResult, err := mainClient.AElf.SendTransaction(hex.EncodeToString(transactionByets))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, sendResult.TransactionID)
 
 	time.Sleep(DefaultTransferTestWaitTime)
 
-	balance, _ := mainClient.GetTokenBalance(DefaultTestSymbol, userKeyPairInfo.Address)
+	balance, _ := mainClient.AElf.GetTokenBalance(DefaultTestSymbol, userKeyPairInfo.Address)
 	assert.Equal(t, DefaultTestSymbol, balance.Symbol)
 	assert.Equal(t, toAddress.Value, balance.Owner.Value)
 	assert.Equal(t, int64(DefaultTransferTestAmount), balance.Balance)
@@ -366,15 +366,15 @@ func TestExecuteTransaction(t *testing.T) {
 
 func TestSendTransctions(t *testing.T) {
 	var transactions []string
+	user := utils.GenerateKeyPairInfo()
 	for i := 0; i < 2; i++ {
-		user := mainClient.GenerateKeyPairInfo()
 		userAddress, _ := utils.Base58StringToAddress(user.Address)
 		transaction := createTransferTransaction(userAddress)
 		transactionByets, _ := proto.Marshal(transaction)
 		transactions = append(transactions, hex.EncodeToString(transactionByets))
 	}
 	txs := strings.Join(transactions, ",")
-	results, err := mainClient.SendTransactions(txs)
+	results, err := mainClient.AElf.SendTransactions(txs)
 	assert.NoError(t, err)
 	assert.True(t, len(results) == 2)
 	assert.NotEmpty(t, results[0])
@@ -383,13 +383,13 @@ func TestSendTransctions(t *testing.T) {
 	time.Sleep(DefaultTransferTestWaitTime)
 
 	for i := 0; i < 2; i++ {
-		transactionResult, _ := mainClient.GetTransactionResult(results[i].(string))
+		transactionResult, _ := mainClient.AElf.GetTransactionResult(results[i].(string))
 		assert.Equal(t, "MINED", transactionResult.Status)
 	}
 }
 
 func TestCalculateTransactionFee(t *testing.T) {
-	chainStatus, err := mainClient.GetChainStatus()
+	chainStatus, err := mainClient.AElf.GetChainStatus()
 	assert.NoError(t, err)
 	params := &pb.Hash{
 		Value: utils.GetBytesSha256(contract.TokenContractSystemName),
@@ -403,12 +403,12 @@ func TestCalculateTransactionFee(t *testing.T) {
 		RefBlockHash:   chainStatus.BestChainHash,
 		RefBlockNumber: chainStatus.BestChainHeight,
 	}
-	result, err := mainClient.CreateRawTransaction(input)
+	result, err := mainClient.AElf.CreateRawTransaction(input)
 	assert.NoError(t, err)
 	spew.Dump("Create RawTransaction result", result)
 	var rawTransaction = result.RawTransaction
 
-	feeResult, err := mainClient.CalculateTransactionFee(rawTransaction)
+	feeResult, err := mainClient.AElf.CalculateTransactionFee(rawTransaction)
 	assert.NoError(t, err)
 	jsonStr, err := json.Marshal(feeResult.TransactionFee)
 	assert.True(t, feeResult.Success)
@@ -423,13 +423,13 @@ func TestGetTransferred(t *testing.T) {
 	transaction := createTransferTransaction(defaultTestHolder.Address)
 
 	transactionByets, _ := proto.Marshal(transaction)
-	sendResult, err := mainClient.SendTransaction(hex.EncodeToString(transactionByets))
+	sendResult, err := mainClient.AElf.SendTransaction(hex.EncodeToString(transactionByets))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, sendResult.TransactionID)
 
 	time.Sleep(DefaultTransferTestWaitTime)
 
-	transferreds := mainClient.GetTransferred(sendResult.TransactionID)
+	transferreds := mainClient.AElf.GetTransferred(sendResult.TransactionID)
 	assert.Len(t, transferreds, 1)
 	assert.Equal(t, DefaultTestSymbol, transferreds[0].GetSymbol())
 	assert.Equal(t, int64(DefaultTransferTestAmount), transferreds[0].GetAmount())
@@ -440,7 +440,7 @@ func TestGetCrossChainTransferred(t *testing.T) {
 	result, _ := createCrossChainTransferTx(defaultSideChainTestHolder.Address)
 
 	time.Sleep(DefaultTransferTestWaitTime)
-	crossChainTransferred := mainClient.GetCrossChainTransferred(result.TransactionID)
+	crossChainTransferred := mainClient.AElf.GetCrossChainTransferred(result.TransactionID)
 	assert.Len(t, crossChainTransferred, 1)
 	assert.Equal(t, DefaultTestSymbol, crossChainTransferred[0].GetSymbol())
 	assert.Equal(t, int64(DefaultTransferTestAmount), crossChainTransferred[0].GetAmount())
@@ -448,7 +448,7 @@ func TestGetCrossChainTransferred(t *testing.T) {
 }
 
 func createTransferTransaction(toAddress *pb.Address) *pb.Transaction {
-	tokenContractAddress, _ := mainClient.GetContractAddressByName(contract.TokenContractSystemName)
+	tokenContractAddress, _ := mainClient.AElf.GetContractAddressByName(contract.TokenContractSystemName)
 	methodName := contract.TokenContractTransfer
 
 	params := &pb.TransferInput{
@@ -460,16 +460,16 @@ func createTransferTransaction(toAddress *pb.Address) *pb.Transaction {
 
 	paramsByte, _ := proto.Marshal(params)
 
-	transaction, _ := mainClient.CreateTransaction(mainClient.GetAddressFromPrivateKey(mainClient.PrivateKey), tokenContractAddress, methodName, paramsByte)
-	signature, _ := mainClient.SignTransaction(mainClient.PrivateKey, transaction)
+	transaction, _ := mainClient.AElf.CreateTransaction(mainClient.AElf.GetAddressFromPrivateKey(mainClient.AElf.PrivateKey), tokenContractAddress, methodName, paramsByte)
+	signature, _ := mainClient.AElf.SignTransaction(mainClient.AElf.PrivateKey, transaction)
 	transaction.Signature = signature
 
 	return transaction
 }
 
 func createCrossChainTransferTx(toAddress *pb.Address) (*types.SendTransactionOutput, []byte) {
-	crossChainContractAddress, _ := mainClient.GetContractAddressByName(contract.TokenContractSystemName)
-	fromAddress := mainClient.GetAddressFromPrivateKey(mainClient.PrivateKey)
+	crossChainContractAddress, _ := mainClient.AElf.GetContractAddressByName(contract.TokenContractSystemName)
+	fromAddress := mainClient.AElf.GetAddressFromPrivateKey(mainClient.AElf.PrivateKey)
 	methodName := contract.TokenContractCrossChainTransfer
 
 	params := &pb.CrossChainTransferInput{
@@ -500,21 +500,21 @@ func getTxMerklePath(merklePath *types.MerklePath) *pb.MerklePath {
 }
 
 func exTx(fromAddr, contractAddr, methodName string, inputBytes []byte) string {
-	tx, _ := mainClient.CreateTransaction(fromAddr, contractAddr, methodName, inputBytes)
-	sign, _ := mainClient.SignTransaction(mainClient.PrivateKey, tx)
+	tx, _ := mainClient.AElf.CreateTransaction(fromAddr, contractAddr, methodName, inputBytes)
+	sign, _ := mainClient.AElf.SignTransaction(mainClient.AElf.PrivateKey, tx)
 	tx.Signature = sign
 
 	byets, _ := proto.Marshal(tx)
-	exResult, _ := mainClient.ExecuteTransaction(hex.EncodeToString(byets))
+	exResult, _ := mainClient.AElf.ExecuteTransaction(hex.EncodeToString(byets))
 	return exResult
 }
 
 func sendTx(fromAddr, contractAddr, methodName string, inputBytes []byte) (*types.SendTransactionOutput, []byte) {
-	tx, _ := mainClient.CreateTransaction(fromAddr, contractAddr, methodName, inputBytes)
-	sign, _ := mainClient.SignTransaction(mainClient.PrivateKey, tx)
+	tx, _ := mainClient.AElf.CreateTransaction(fromAddr, contractAddr, methodName, inputBytes)
+	sign, _ := mainClient.AElf.SignTransaction(mainClient.AElf.PrivateKey, tx)
 	tx.Signature = sign
 
 	byets, _ := proto.Marshal(tx)
-	exResult, _ := mainClient.SendTransaction(hex.EncodeToString(byets))
+	exResult, _ := mainClient.AElf.SendTransaction(hex.EncodeToString(byets))
 	return exResult, byets
 }

@@ -35,9 +35,7 @@ func NewContractInfoCommand() *cobra.Command {
 }
 
 func contractInfoCommandFunc(cmd *cobra.Command, args []string) {
-	//ctx, cancel := context.WithTimeout(context.Background(), DefaultContextTimeOut)
 	resp, err := mustClientFromCmd(cmd).GetContracts(context.Background(), contractNameList)
-	//cancel()
 	if err != nil {
 		cobrautl.ExitWithError(cobrautl.ExitError, err)
 	}

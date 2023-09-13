@@ -5,14 +5,12 @@ import (
 	"ale/core/types"
 	pb "ale/protobuf/generated"
 	"ale/utils"
-	"context"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	wrap "github.com/golang/protobuf/ptypes/wrappers"
 	secp256 "github.com/haltingstate/secp256k1-go"
 	"google.golang.org/protobuf/proto"
-	"sync"
 )
 
 // GetAddressFromPubKey Get the account address through the public key.
@@ -224,41 +222,6 @@ func (c *AElfClient) GetTransactionResults(blockHash string, offset, limit int) 
 		transactions = append(transactions, transaction)
 	}
 	return transactions, nil
-}
-
-func (c *AElfClient) GetContracts(ctx context.Context, contractNames []string) (map[string]*types.ContractInfo, error) {
-	var res sync.Map
-	var wg sync.WaitGroup
-	wg.Add(len(contractNames))
-
-	for i := range contractNames {
-		go func(index int) {
-			defer wg.Done()
-
-			contractName := contractNames[index]
-			addrStr, err := c.GetContractAddressByName(contractName)
-			if err != nil {
-				return
-			}
-			ci, err := c.GetContractInfoByAddress(addrStr)
-			if err != nil {
-				return
-			}
-			res.Store(contractName, &types.ContractInfo{
-				Info:    ci,
-				Address: addrStr,
-			})
-		}(i)
-	}
-
-	wg.Wait()
-
-	contracts := make(map[string]*types.ContractInfo)
-	res.Range(func(key, value any) bool {
-		contracts[key.(string)] = value.(*types.ContractInfo)
-		return true
-	})
-	return contracts, nil
 }
 
 func (c *AElfClient) GetContractInfo(contractName string) *types.ContractInfo {

@@ -3,13 +3,13 @@ package command
 import (
 	"ale/client"
 	"ale/pkg/cobrautl"
+	"errors"
+	"fmt"
 	"github.com/spf13/cobra"
+	"io"
+	"io/ioutil"
+	"os"
 	"strings"
-	"time"
-)
-
-const (
-	DefaultContextTimeOut = 15 * time.Second
 )
 
 type GlobalFlags struct {
@@ -17,7 +17,17 @@ type GlobalFlags struct {
 	WalletAddress string
 }
 
-func mustClientFromCmd(cmd *cobra.Command) *client.AElfClient {
+func newSendClientFromCmd(cmd *cobra.Command) *client.Client {
+	c := mustClientFromCmd(cmd)
+	pk, err := cmd.Flags().GetString("privateKey")
+	if err != nil {
+		cobrautl.ExitWithError(cobrautl.ExitBadConnection, err)
+	}
+	c.AElf.PrivateKey = pk
+	return c
+}
+
+func mustClientFromCmd(cmd *cobra.Command) *client.Client {
 	cfg := &client.Config{}
 
 	eps, err := cmd.Flags().GetStringSlice("endpoints")
@@ -33,4 +43,28 @@ func mustClientFromCmd(cmd *cobra.Command) *client.AElfClient {
 	}
 
 	return c
+}
+
+func argOrStdin(args []string, stdin io.Reader, i int) (string, error) {
+	if i < len(args) {
+		return args[i], nil
+	}
+	bytes, err := ioutil.ReadAll(stdin)
+	if string(bytes) == "" || err != nil {
+		return "", errors.New("no available argument and stdin")
+	}
+	return string(bytes), nil
+}
+
+func getOp(args []string) (string, string) {
+	if len(args) == 0 {
+		cobrautl.ExitWithError(cobrautl.ExitBadArgs, fmt.Errorf("command needs 1 argument and input from stdin or 2 arguments"))
+	}
+
+	value, err := argOrStdin(args, os.Stdin, 1)
+	if err != nil {
+		cobrautl.ExitWithError(cobrautl.ExitBadArgs, fmt.Errorf("command needs 1 argument and input from stdin or 2 arguments"))
+	}
+
+	return args[0], value
 }
