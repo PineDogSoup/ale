@@ -4,7 +4,6 @@ import (
 	"ale/core/contract"
 	"ale/core/types"
 	pb "ale/protobuf/generated"
-
 	"ale/utils"
 	"crypto/sha256"
 	"encoding/hex"

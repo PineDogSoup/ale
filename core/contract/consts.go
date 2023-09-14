@@ -3,6 +3,7 @@ package contract
 const (
 	// contract
 	TokenContractSystemName      = "AElf.ContractNames.Token"
+	PortkeyContractSystemName    = "Portkey.ContractNames.CA"
 	CrossChainContractSystemName = "AElf.ContractNames.CrossChain"
 	ForestContractSystemName     = "AElf.ContractNames.Forest"
 	EconomicContractSystemName   = "AElf.ContractNames.Economic"
@@ -25,4 +26,5 @@ const (
 	TokenContractTransfer               = "Transfer"
 	TokenContractCrossChainTransfer     = "CrossChainTransfer"
 	CrossChainContractCrossChainReceive = "CrossChainReceive"
+	PortkeyContractGetHolderInfo        = "GetHolderInfo"
 )

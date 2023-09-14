@@ -5,5 +5,6 @@ type SendResult struct {
 }
 
 type CallResult struct {
-	Data interface{}
+	Data    interface{}
+	Message string
 }

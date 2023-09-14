@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"github.com/btcsuite/btcutil/base58"
 	secp256 "github.com/haltingstate/secp256k1-go"
+	"log"
 	"reflect"
 	"unsafe"
 )
@@ -130,4 +131,20 @@ func GenerateKeyPairInfo() *types.KeyPair {
 		Address:    privateKeyAddress,
 	}
 	return keyPair
+}
+
+func HexStringToByteArray(hexString string) []byte {
+	if len(hexString) >= 2 && hexString[0] == '0' && (hexString[1] == 'x' || hexString[1] == 'X') {
+		hexString = hexString[2:]
+	}
+	length := len(hexString)
+	byteArray := make([]byte, length/2)
+	for startIndex := 0; startIndex < length; startIndex += 2 {
+		byteValue, err := hex.DecodeString(hexString[startIndex : startIndex+2])
+		if err != nil {
+			log.Fatal(err)
+		}
+		byteArray[startIndex/2] = byteValue[0]
+	}
+	return byteArray
 }

@@ -55,17 +55,20 @@ func (c *Client) Send(ctx context.Context, methodName, inputStr string) (types.S
 	return res, nil
 }
 
-func (c *Client) Call(ctx context.Context, methodName, inputStr string) (types.CallResult, error) {
-	var res types.CallResult
-	var err error
+func (c *Client) Call(ctx context.Context, methodName, inputStr string) (*types.CallResult, error) {
+	res := new(types.CallResult)
 
 	switch strings.ToLower(methodName) {
+	case strings.ToLower("GetHolderInfo"):
+		holderInfoRes, err := c.getHolderInfo(ctx, inputStr)
+		if err != nil {
+			return &types.CallResult{Message: fmt.Sprintf("%s: %s", methodName, err.Error())}, err
+		}
+		res.Data = holderInfoRes
+		break
 	default:
-		err = errors.New(fmt.Sprintf("No support method:%s", methodName))
-	}
-
-	if err != nil {
-		return res, err
+		err := errors.New(fmt.Sprintf("No support method:%s", methodName))
+		return &types.CallResult{Message: fmt.Sprintf("%s: %s", methodName, err.Error())}, err
 	}
 
 	return res, nil
@@ -132,4 +135,32 @@ func (c *Client) sendTransferTransaction(ctx context.Context, inputStr string) (
 		return res, nil
 	}
 	return types.SendResult{TransactionId: sendResult.TransactionID}, nil
+}
+
+var portkeyAddrMap = map[string]string{}
+
+func (c *Client) getHolderInfo(ctx context.Context, inputStr string) (*pb.GetHolderInfoOutput, error) {
+	res := &pb.GetHolderInfoOutput{}
+	var rev types.GetHolderInfoInput
+
+	err := json.Unmarshal([]byte(inputStr), &rev)
+	if err != nil {
+		return res, errors.New(fmt.Sprintf("Unmarshal send transaction error:%s", err.Error()))
+	}
+	paramsByte, _ := proto.Marshal(&pb.GetHolderInfoInput{
+		CaHash: &pb.Hash{Value: utils.HexStringToByteArray(rev.CaHash)},
+	})
+
+	//portkeyContractAddr, _ := c.AElf.GetContractAddressByName(contract.PortkeyContractSystemName)
+	portkeyContractAddr := portkeyAddrMap[c.AElf.Host]
+	transaction, _ := c.AElf.CreateTransaction(c.AElf.GetAddressFromPrivateKey(privateKeyForView), portkeyContractAddr, contract.PortkeyContractGetHolderInfo, paramsByte)
+	transaction.Signature, _ = c.AElf.SignTransaction(privateKeyForView, transaction)
+	transactionByets, _ := proto.Marshal(transaction)
+	callResult, err := c.AElf.ExecuteTransaction(hex.EncodeToString(transactionByets))
+	if err != nil {
+		return res, errors.New(fmt.Sprintf("Execute transaction error:%s", err.Error()))
+	}
+	resByte, _ := hex.DecodeString(callResult)
+	proto.Unmarshal(resByte, res)
+	return res, nil
 }

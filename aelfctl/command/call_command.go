@@ -19,11 +19,11 @@ func NewCallCommand() *cobra.Command {
 
 func callCommandFunc(cmd *cobra.Command, args []string) {
 	method, value := getOp(args)
-	resp, err := newSendClientFromCmd(cmd).Call(context.Background(), method, value)
+	resp, err := mustClientFromCmd(cmd).Call(context.Background(), method, value)
 	if err != nil {
 		cobrautl.ExitWithError(cobrautl.ExitError, err)
 	}
 
-	res, _ := json.Marshal(resp)
+	res, _ := json.MarshalIndent(resp, "", "  ")
 	fmt.Println(string(res))
 }

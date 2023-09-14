@@ -3,6 +3,7 @@ module ale
 go 1.20
 
 require (
+	github.com/btcsuite/btcd v0.20.1-beta
 	github.com/btcsuite/btcutil v1.0.1
 	github.com/davecgh/go-spew v1.1.1
 	github.com/golang/protobuf v1.5.3

@@ -125,7 +125,7 @@ func (c *AElfClient) GetContractInfoByAddress(address string) (*pb.ContractInfo,
 
 	addr, _ := utils.Base58StringToAddress(address)
 	addrBytes, _ := proto.Marshal(addr)
-	transaction, err := c.CreateTransaction(utils.GetAddressFromPrivateKey(privateKeyForView), toAddress, "GetContractInfo", addrBytes)
+	transaction, err := c.CreateTransaction(utils.GetAddressFromPrivateKey(privateKeyForView), toAddress, contract.GenesisContractGetContractInfo, addrBytes)
 	if err != nil {
 		return res, errors.New("Create Transaction error" + err.Error())
 	}

@@ -15,6 +15,7 @@ import (
 var (
 	contractNameList = []string{
 		contract.TokenContractSystemName,
+		contract.PortkeyContractSystemName,
 		contract.CrossChainContractSystemName,
 		contract.ForestContractSystemName,
 		contract.EconomicContractSystemName,
