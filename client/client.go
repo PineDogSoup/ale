@@ -2,31 +2,29 @@ package client
 
 import (
 	"ale/utils"
-	"math/rand"
+	"context"
 	"net/url"
-	"sync"
 	"time"
 )
 
 type Client struct {
+	ctx  context.Context
 	AElf AElfClient
-	AElfCmd
 }
 
-// AElfClient AElf Client.
 type AElfClient struct {
-	Host         string
-	Version      string
-	PrivateKey   string
-	Address      string
-	HttpClient   *utils.HttpClient
-	endpoints    []url.URL
-	rand         *rand.Rand
-	ContractInfo sync.Map
-	sync.RWMutex
+	Host           string
+	Version        string
+	PrivateKey     string
+	Address        string
+	HttpClient     *utils.HttpClient
+	endpoints      []url.URL
+	PortkeyAddress string
 }
 
 type Config struct {
+	ChainId    string
+	Env        string
 	Endpoints  []string
 	Version    string
 	PrivateKey string
@@ -36,7 +34,6 @@ type Config struct {
 func New(cfg *Config) (*Client, error) {
 	c := &Client{
 		AElf: AElfClient{
-			Host:       cfg.Endpoints[0],
 			PrivateKey: cfg.PrivateKey,
 			HttpClient: utils.NewHttpClient(cfg.Version, cfg.Timeout),
 		},
@@ -53,4 +50,7 @@ func SetAElfClientAddress(cfg *Config, client *Client) {
 	}
 }
 func SetAElfClientEndpoint(cfg *Config, client *Client) {
+	if len(cfg.Endpoints) > 0 {
+		client.AElf.Host = cfg.Endpoints[0]
+	}
 }

@@ -1,7 +1,7 @@
 package test
 
 import (
-	"ale/core/contract"
+	"ale/core/consts"
 	"ale/core/types"
 	pb "ale/protobuf/generated"
 	"ale/utils"
@@ -102,7 +102,7 @@ func TestCreateRawTransaction(t *testing.T) {
 	chainStatus, err := mainClient.AElf.GetChainStatus()
 	assert.NoError(t, err)
 	params := &pb.Hash{
-		Value: utils.GetBytesSha256(contract.TokenContractSystemName),
+		Value: utils.GetBytesSha256(consts.TokenContractSystemName),
 	}
 	paramsByte, _ := protojson.Marshal(params)
 	var input = &types.CreateRawTransactionInput{
@@ -120,7 +120,7 @@ func TestCreateRawTransaction(t *testing.T) {
 
 func TestSendRawTransaction(t *testing.T) {
 	chainStatus, err := mainClient.AElf.GetChainStatus()
-	tokenContractAddress, _ := mainClient.AElf.GetContractAddressByName(contract.TokenContractSystemName)
+	tokenContractAddress, _ := mainClient.AElf.GetContractAddressByName(consts.TokenContractSystemName)
 	userKeyPairInfo := utils.GenerateKeyPairInfo()
 	toAddress, _ := utils.Base58StringToAddress(userKeyPairInfo.Address)
 	params := &pb.TransferInput{
@@ -134,7 +134,7 @@ func TestSendRawTransaction(t *testing.T) {
 	var input = &types.CreateRawTransactionInput{
 		From:           _address,
 		To:             tokenContractAddress,
-		MethodName:     contract.TokenContractTransfer,
+		MethodName:     consts.TokenContractTransfer,
 		RefBlockNumber: chainStatus.BestChainHeight,
 		RefBlockHash:   chainStatus.BestChainHash,
 		Params:         string(paramsByte),
@@ -154,7 +154,7 @@ func TestSendRawTransaction(t *testing.T) {
 	assert.Equal(t, chainStatus.BestChainHeight, executeRawResult.Transaction.RefBlockNumber)
 	prefixBytes, _ := hex.DecodeString(chainStatus.BestChainHash)
 	assert.Equal(t, base64.StdEncoding.EncodeToString(prefixBytes[:4]), executeRawResult.Transaction.RefBlockPrefix)
-	assert.Equal(t, contract.TokenContractTransfer, executeRawResult.Transaction.MethodName)
+	assert.Equal(t, consts.TokenContractTransfer, executeRawResult.Transaction.MethodName)
 	assert.Equal(t, "{ \"to\": \""+userKeyPairInfo.Address+"\", \"symbol\": \"ELF\", \"amount\": \"1000000000\", \"memo\": \"transfer in test\" }", executeRawResult.Transaction.Params)
 	signatureBytes, _ := hex.DecodeString(signature)
 	assert.Equal(t, base64.StdEncoding.EncodeToString(signatureBytes), executeRawResult.Transaction.Signature)
@@ -169,7 +169,7 @@ func TestSendRawTransaction(t *testing.T) {
 
 func TestSendRawTransactionWithoutReturnTransaction(t *testing.T) {
 	chainStatus, err := mainClient.AElf.GetChainStatus()
-	tokenContractAddress, _ := mainClient.AElf.GetContractAddressByName(contract.TokenContractSystemName)
+	tokenContractAddress, _ := mainClient.AElf.GetContractAddressByName(consts.TokenContractSystemName)
 	userKeyPairInfo := utils.GenerateKeyPairInfo()
 	toAddress, _ := utils.Base58StringToAddress(userKeyPairInfo.Address)
 	params := &pb.TransferInput{
@@ -216,7 +216,7 @@ func TestSendRawTransactionWithoutReturnTransaction(t *testing.T) {
 
 func TestExecuteRawTransaction(t *testing.T) {
 	chainStatus, err := mainClient.AElf.GetChainStatus()
-	tokenContractAddress, _ := mainClient.AElf.GetContractAddressByName(contract.TokenContractSystemName)
+	tokenContractAddress, _ := mainClient.AElf.GetContractAddressByName(consts.TokenContractSystemName)
 	userKeyPairInfo := utils.GenerateKeyPairInfo()
 	toAddress, _ := utils.Base58StringToAddress(userKeyPairInfo.Address)
 	transaction := createTransferTransaction(toAddress)
@@ -236,7 +236,7 @@ func TestExecuteRawTransaction(t *testing.T) {
 	var input = &types.CreateRawTransactionInput{
 		From:           _address,
 		To:             tokenContractAddress,
-		MethodName:     contract.TokenContractGetBalance,
+		MethodName:     consts.TokenContractGetBalance,
 		RefBlockNumber: chainStatus.BestChainHeight,
 		RefBlockHash:   chainStatus.BestChainHash,
 		Params:         string(paramsByte),
@@ -258,7 +258,7 @@ func TestExecuteRawTransaction(t *testing.T) {
 
 func TestSendTransaction(t *testing.T) {
 	// Get token contract address.
-	tokenContractAddress, _ := mainClient.AElf.GetContractAddressByName(contract.TokenContractSystemName)
+	tokenContractAddress, _ := mainClient.AElf.GetContractAddressByName(consts.TokenContractSystemName)
 	fromAddress := mainClient.AElf.GetAddressFromPrivateKey(mainClient.AElf.PrivateKey)
 	userKeyPairInfo := utils.GenerateKeyPairInfo()
 	toAddress, _ := utils.Base58StringToAddress(userKeyPairInfo.Address)
@@ -314,10 +314,10 @@ func TestSendTransaction(t *testing.T) {
 }
 
 func TestSendFailedTransaction(t *testing.T) {
-	tokenContractAddress, _ := mainClient.AElf.GetContractAddressByName(contract.TokenContractSystemName)
+	tokenContractAddress, _ := mainClient.AElf.GetContractAddressByName(consts.TokenContractSystemName)
 	toAddress, _ := utils.Base58StringToAddress(mainClient.AElf.GetAddressFromPrivateKey(mainClient.AElf.PrivateKey))
 	userKeyPairInfo := utils.GenerateKeyPairInfo()
-	methodName := contract.TokenContractTransfer
+	methodName := consts.TokenContractTransfer
 
 	params := &pb.TransferInput{
 		To:     toAddress,
@@ -392,7 +392,7 @@ func TestCalculateTransactionFee(t *testing.T) {
 	chainStatus, err := mainClient.AElf.GetChainStatus()
 	assert.NoError(t, err)
 	params := &pb.Hash{
-		Value: utils.GetBytesSha256(contract.TokenContractSystemName),
+		Value: utils.GetBytesSha256(consts.TokenContractSystemName),
 	}
 	paramsByte, _ := protojson.Marshal(params)
 	var input = &types.CreateRawTransactionInput{
@@ -448,8 +448,8 @@ func TestGetCrossChainTransferred(t *testing.T) {
 }
 
 func createTransferTransaction(toAddress *pb.Address) *pb.Transaction {
-	tokenContractAddress, _ := mainClient.AElf.GetContractAddressByName(contract.TokenContractSystemName)
-	methodName := contract.TokenContractTransfer
+	tokenContractAddress, _ := mainClient.AElf.GetContractAddressByName(consts.TokenContractSystemName)
+	methodName := consts.TokenContractTransfer
 
 	params := &pb.TransferInput{
 		To:     toAddress,
@@ -468,9 +468,9 @@ func createTransferTransaction(toAddress *pb.Address) *pb.Transaction {
 }
 
 func createCrossChainTransferTx(toAddress *pb.Address) (*types.SendTransactionOutput, []byte) {
-	crossChainContractAddress, _ := mainClient.AElf.GetContractAddressByName(contract.TokenContractSystemName)
+	crossChainContractAddress, _ := mainClient.AElf.GetContractAddressByName(consts.TokenContractSystemName)
 	fromAddress := mainClient.AElf.GetAddressFromPrivateKey(mainClient.AElf.PrivateKey)
-	methodName := contract.TokenContractCrossChainTransfer
+	methodName := consts.TokenContractCrossChainTransfer
 
 	params := &pb.CrossChainTransferInput{
 		To:           toAddress,

@@ -1,7 +1,7 @@
 package client
 
 import (
-	"ale/core/contract"
+	"ale/core/consts"
 	"ale/core/types"
 	pb "ale/protobuf/generated"
 	"ale/utils"
@@ -73,10 +73,10 @@ func (c *AElfClient) GetTransferred(txId string) []*pb.Transferred {
 		return transffereds
 	}
 
-	contractAddr, _ := c.GetContractAddressByName(contract.TokenContractSystemName)
+	contractAddr, _ := c.GetContractAddressByName(consts.TokenContractSystemName)
 
 	for _, log := range result.Logs {
-		if log.Name == contract.TransferredLogEventName && log.Address == contractAddr {
+		if log.Name == consts.TransferredLogEventName && log.Address == contractAddr {
 			transferred := new(pb.Transferred)
 			if nonIndexedBytes, err := utils.Base64DecodeBytes(log.NonIndexed); err == nil {
 				proto.Unmarshal(nonIndexedBytes, transferred)
@@ -110,10 +110,10 @@ func (c *AElfClient) GetCrossChainTransferred(txId string) []*pb.CrossChainTrans
 		return crossChainTransferreds
 	}
 
-	contractAddr, _ := c.GetContractAddressByName(contract.TokenContractSystemName)
+	contractAddr, _ := c.GetContractAddressByName(consts.TokenContractSystemName)
 
 	for _, log := range result.Logs {
-		if log.Name == contract.CrossChainTransferredLogEventName && log.Address == contractAddr {
+		if log.Name == consts.CrossChainTransferredLogEventName && log.Address == contractAddr {
 			crossChainTransferred := new(pb.CrossChainTransferred)
 			if nonIndexedBytes, err := utils.Base64DecodeBytes(log.NonIndexed); err == nil {
 				proto.Unmarshal(nonIndexedBytes, crossChainTransferred)
@@ -132,10 +132,10 @@ func (c *AElfClient) GetCrossChainReceived(txId string) []*pb.CrossChainReceived
 		return crossChainReceiveds
 	}
 
-	contractAddr, _ := c.GetContractAddressByName(contract.TokenContractSystemName)
+	contractAddr, _ := c.GetContractAddressByName(consts.TokenContractSystemName)
 
 	for _, log := range result.Logs {
-		if log.Name == contract.CrossChainReceivedLogEventName && log.Address == contractAddr {
+		if log.Name == consts.CrossChainReceivedLogEventName && log.Address == contractAddr {
 			crossChainReceived := new(pb.CrossChainReceived)
 			if nonIndexedBytes, err := utils.Base64DecodeBytes(log.NonIndexed); err == nil {
 				proto.Unmarshal(nonIndexedBytes, crossChainReceived)

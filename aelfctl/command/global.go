@@ -15,6 +15,7 @@ import (
 type GlobalFlags struct {
 	Endpoints     []string
 	WalletAddress string
+	PrivateKey    string
 }
 
 func newSendClientFromCmd(cmd *cobra.Command) *client.Client {
@@ -30,19 +31,37 @@ func newSendClientFromCmd(cmd *cobra.Command) *client.Client {
 func mustClientFromCmd(cmd *cobra.Command) *client.Client {
 	cfg := &client.Config{}
 
-	eps, err := cmd.Flags().GetStringSlice("endpoints")
+	Endpoints, err := cmd.Flags().GetStringSlice("endpoints")
 	if err == nil {
-		for i, ip := range eps {
-			eps[i] = strings.TrimSpace(ip)
+		for i, ip := range Endpoints {
+			Endpoints[i] = strings.TrimSpace(ip)
 		}
+		cfg.Endpoints = Endpoints
 	}
-	cfg.Endpoints = eps
 	c, err := client.New(cfg)
 	if err != nil {
 		cobrautl.ExitWithError(cobrautl.ExitBadConnection, err)
 	}
 
 	return c
+}
+
+func mustPortkeyFromCmd(cmd *cobra.Command) *client.Portkey {
+	env, err := cmd.Flags().GetString("env")
+	if err != nil {
+		cobrautl.ExitWithError(cobrautl.ExitInvalidInput, err)
+	}
+	chainId, err := cmd.Flags().GetString("chainId")
+	if err != nil {
+		cobrautl.ExitWithError(cobrautl.ExitInvalidInput, err)
+	}
+
+	p, err := client.NewPortkey(env, chainId)
+	if err != nil {
+		cobrautl.ExitWithError(cobrautl.ExitBadConnection, err)
+	}
+
+	return p
 }
 
 func argOrStdin(args []string, stdin io.Reader, i int) (string, error) {

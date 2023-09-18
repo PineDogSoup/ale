@@ -2,7 +2,7 @@ package test
 
 import (
 	"ale/client"
-	"ale/core/contract"
+	"ale/core/consts"
 	"ale/core/types"
 	pb "ale/protobuf/generated"
 	"ale/utils"
@@ -60,7 +60,7 @@ func TestGenerateKeyPairInfo(t *testing.T) {
 }
 
 func TestGetContractAddressByName(t *testing.T) {
-	contractAddress, err := mainClient.AElf.GetContractAddressByName(contract.TokenContractSystemName)
+	contractAddress, err := mainClient.AElf.GetContractAddressByName(consts.TokenContractSystemName)
 	assert.NoError(t, err)
 	spew.Dump("Get ContractAddress By Name Result", contractAddress)
 }

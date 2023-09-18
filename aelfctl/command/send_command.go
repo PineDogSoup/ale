@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/spf13/cobra"
+	"time"
 )
 
 func NewSendCommand() *cobra.Command {
@@ -19,11 +20,18 @@ func NewSendCommand() *cobra.Command {
 
 func sendCommandFunc(cmd *cobra.Command, args []string) {
 	key, value := getOp(args)
-	resp, err := newSendClientFromCmd(cmd).Send(context.Background(), key, value)
+	sendClient := newSendClientFromCmd(cmd)
+	resp, err := sendClient.Send(context.Background(), key, value)
 	if err != nil {
 		cobrautl.ExitWithError(cobrautl.ExitError, err)
 	}
-
 	res, _ := json.Marshal(resp)
 	fmt.Println(string(res))
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+	defer cancel()
+
+	txRes, _ := sendClient.GetTxResultUntilFinished(ctx, resp.TransactionId)
+	tx, _ := json.MarshalIndent(txRes, "", "  ")
+	fmt.Println(string(tx))
 }

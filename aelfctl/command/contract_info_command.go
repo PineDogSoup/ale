@@ -1,7 +1,7 @@
 package command
 
 import (
-	"ale/core/contract"
+	"ale/core/consts"
 	"ale/core/types"
 	"ale/pkg/cobrautl"
 	"ale/utils"
@@ -14,16 +14,14 @@ import (
 
 var (
 	contractNameList = []string{
-		contract.TokenContractSystemName,
-		contract.PortkeyContractSystemName,
-		contract.CrossChainContractSystemName,
-		contract.ForestContractSystemName,
-		contract.EconomicContractSystemName,
-		contract.ProfitContractSystemName,
-		contract.TreasuryContractSystemName,
-		contract.ElectionContractSystemName,
-		contract.VoteContractSystemName,
-		contract.ConsensusContractSystemName,
+		consts.TokenContractSystemName,
+		consts.CrossChainContractSystemName,
+		consts.EconomicContractSystemName,
+		consts.ProfitContractSystemName,
+		consts.TreasuryContractSystemName,
+		consts.ElectionContractSystemName,
+		consts.VoteContractSystemName,
+		consts.ConsensusContractSystemName,
 	}
 )
 

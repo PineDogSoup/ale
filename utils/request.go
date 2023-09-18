@@ -14,43 +14,8 @@ const (
 	defaultDialTimeout = 15 * time.Second
 )
 
-// GetRequest GetRequest with Authorization.
-func GetRequestWithAuth(method, url, version string, params map[string]interface{}, basicAuth string) ([]byte, error) {
-	var apiURL string
-	if params == nil {
-		apiURL = url
-	} else {
-		strParams := Map2UrlParams(params)
-		apiURL = url + "?" + strParams
-	}
-	request, err := http.NewRequest(method, apiURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	if version != "" {
-		request.Header.Set("Accept", "application/json;v="+version)
-	} else {
-		request.Header.Set("Accept", "application/json")
-	}
-	if basicAuth != "" {
-		request.Header.Set("Authorization", basicAuth)
-	}
-	fmt.Printf("%v", request.Header)
-	client := http.Client{Timeout: defaultDialTimeout}
-	resp, err := client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
-}
-
 // GetRequest GetRequest.
-func GetRequest(method, url, version string, params map[string]interface{}) ([]byte, error) {
+func GetRequest(url, version string, params map[string]interface{}) ([]byte, error) {
 	var apiURL string
 	if params == nil {
 		apiURL = url
@@ -58,7 +23,7 @@ func GetRequest(method, url, version string, params map[string]interface{}) ([]b
 		strParams := Map2UrlParams(params)
 		apiURL = url + "?" + strParams
 	}
-	request, err := http.NewRequest(method, apiURL, nil)
+	request, err := http.NewRequest("GET", apiURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -78,6 +43,7 @@ func GetRequest(method, url, version string, params map[string]interface{}) ([]b
 	if err != nil {
 		return nil, err
 	}
+	//fmt.Println(string(data))
 	return data, nil
 }
 
@@ -99,40 +65,6 @@ func PostRequest(url, version string, params map[string]interface{}) ([]byte, er
 		request.Header.Set("Content-Type", "application/json")
 
 	}
-	client := &http.Client{Timeout: defaultDialTimeout}
-	resp, err := client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
-}
-
-// PostRequest Post Request with Authorization.
-func PostRequestWithAuth(url, version string, params map[string]interface{}, basicAuth string) ([]byte, error) {
-	jsonParams := ""
-	if params != nil {
-		bytesData, _ := json.Marshal(params)
-		jsonParams = string(bytesData)
-	}
-
-	request, err := http.NewRequest("POST", url, strings.NewReader(jsonParams))
-	if err != nil {
-		return nil, err
-	}
-	if version != "" {
-		request.Header.Set("Content-Type", "application/json;v="+version)
-	} else {
-		request.Header.Set("Content-Type", "application/json")
-	}
-	if basicAuth != "" {
-		request.Header.Set("Authorization", basicAuth)
-	}
-	fmt.Printf("%v", request.Header)
 	client := &http.Client{Timeout: defaultDialTimeout}
 	resp, err := client.Do(request)
 	if err != nil {

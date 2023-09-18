@@ -14,6 +14,7 @@ func NewCallCommand() *cobra.Command {
 		Short: "Call contract method name with contract method input by string.",
 		Run:   callCommandFunc,
 	}
+
 	return cmd
 }
 

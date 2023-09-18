@@ -1,7 +1,7 @@
 package client
 
 import (
-	"ale/core/contract"
+	"ale/core/consts"
 	"ale/core/types"
 	pb "ale/protobuf/generated"
 	"ale/utils"
@@ -47,7 +47,7 @@ func (c *AElfClient) GetFormattedAddress(address string) (string, error) {
 }
 
 func (c *AElfClient) GetTokenBalance(symbol, owner string) (*pb.GetBalanceOutput, error) {
-	tokenContractAddr, _ := c.GetContractAddressByName(contract.TokenContractSystemName)
+	tokenContractAddr, _ := c.GetContractAddressByName(consts.TokenContractSystemName)
 	addr := c.GetAddressFromPrivateKey(c.PrivateKey)
 	ownerAddr, err := utils.Base58StringToAddress(owner)
 	if err != nil {
@@ -58,7 +58,7 @@ func (c *AElfClient) GetTokenBalance(symbol, owner string) (*pb.GetBalanceOutput
 		Owner:  ownerAddr,
 	})
 
-	tx, _ := c.CreateTransaction(addr, tokenContractAddr, contract.TokenContractGetBalance, inputByte)
+	tx, _ := c.CreateTransaction(addr, tokenContractAddr, consts.TokenContractGetBalance, inputByte)
 	sign, _ := c.SignTransaction(c.PrivateKey, tx)
 	tx.Signature = sign
 
@@ -73,13 +73,13 @@ func (c *AElfClient) GetTokenBalance(symbol, owner string) (*pb.GetBalanceOutput
 }
 
 func (c *AElfClient) GetTokenInfo(symbol string) (*pb.TokenInfo, error) {
-	tokenContractAddr, _ := c.GetContractAddressByName(contract.TokenContractSystemName)
+	tokenContractAddr, _ := c.GetContractAddressByName(consts.TokenContractSystemName)
 	addr := c.GetAddressFromPrivateKey(c.PrivateKey)
 	inputByte, _ := proto.Marshal(&pb.TokenInfo{
 		Symbol: symbol,
 	})
 
-	tx, _ := c.CreateTransaction(addr, tokenContractAddr, contract.TokenContractGetTokenInfo, inputByte)
+	tx, _ := c.CreateTransaction(addr, tokenContractAddr, consts.TokenContractGetTokenInfo, inputByte)
 	sign, _ := c.SignTransaction(c.PrivateKey, tx)
 	tx.Signature = sign
 
@@ -125,7 +125,7 @@ func (c *AElfClient) GetContractInfoByAddress(address string) (*pb.ContractInfo,
 
 	addr, _ := utils.Base58StringToAddress(address)
 	addrBytes, _ := proto.Marshal(addr)
-	transaction, err := c.CreateTransaction(utils.GetAddressFromPrivateKey(privateKeyForView), toAddress, contract.GenesisContractGetContractInfo, addrBytes)
+	transaction, err := c.CreateTransaction(utils.GetAddressFromPrivateKey(privateKeyForView), toAddress, consts.GenesisContractGetContractInfo, addrBytes)
 	if err != nil {
 		return res, errors.New("Create Transaction error" + err.Error())
 	}
@@ -170,7 +170,7 @@ func (c *AElfClient) GetGenesisContractAddress() (string, error) {
 // GetTransactionPoolStatus Get information about the current transaction pool.
 func (c *AElfClient) GetTransactionPoolStatus() (*types.TransactionPoolStatusOutput, error) {
 	url := c.Host + TRANSACTIONPOOLSTATUS
-	transactionPoolBytes, err := utils.GetRequest("GET", url, c.Version, nil)
+	transactionPoolBytes, err := utils.GetRequest(url, c.Version, nil)
 	if err != nil {
 		return nil, errors.New("Get Transaction Pool Status error:" + err.Error())
 	}
@@ -187,7 +187,7 @@ func (c *AElfClient) GetTransactionResult(transactionID string) (*types.Transact
 		return nil, errors.New("transactionID hex to []byte error:" + err.Error())
 	}
 	params := map[string]interface{}{"transactionId": transactionID}
-	transactionBytes, err := utils.GetRequest("GET", url, c.Version, params)
+	transactionBytes, err := utils.GetRequest(url, c.Version, params)
 	if err != nil {
 		return nil, errors.New("Get Transaction Result error:" + err.Error())
 	}
@@ -208,7 +208,7 @@ func (c *AElfClient) GetTransactionResults(blockHash string, offset, limit int) 
 		"offset":    offset,
 		"limit":     limit,
 	}
-	transactionsBytes, err := utils.GetRequest("GET", url, c.Version, params)
+	transactionsBytes, err := utils.GetRequest(url, c.Version, params)
 	if err != nil {
 		return nil, errors.New("Get Transaction Results error:" + err.Error())
 	}
@@ -224,23 +224,23 @@ func (c *AElfClient) GetTransactionResults(blockHash string, offset, limit int) 
 	return transactions, nil
 }
 
-func (c *AElfClient) GetContractInfo(contractName string) *types.ContractInfo {
-	if name, ok := c.ContractInfo.Load(contractName); ok {
-		return name.(*types.ContractInfo)
-	}
-
-	if contractName == contract.GenesisContractSystemName {
-		genesisContractAddr, _ := c.GetGenesisContractAddress()
-		c.ContractInfo.Store(contractName, &types.ContractInfo{Address: genesisContractAddr})
-	}
-
-	addr, _ := c.GetContractAddressByName(contractName)
-	info, _ := c.GetContractInfoByAddress(addr)
-	c.ContractInfo.Store(contractName, &types.ContractInfo{
-		Info:    info,
-		Address: addr,
-	})
-
-	res, _ := c.ContractInfo.Load(contractName)
-	return res.(*types.ContractInfo)
-}
+//func (c *AElfClient) GetContractInfo(contractName string) *types.ContractInfo {
+//	if name, ok := c.ContractInfo.Load(contractName); ok {
+//		return name.(*types.ContractInfo)
+//	}
+//
+//	if contractName == consts.GenesisContractSystemName {
+//		genesisContractAddr, _ := c.GetGenesisContractAddress()
+//		c.ContractInfo.Store(contractName, &types.ContractInfo{Address: genesisContractAddr})
+//	}
+//
+//	addr, _ := c.GetContractAddressByName(contractName)
+//	info, _ := c.GetContractInfoByAddress(addr)
+//	c.ContractInfo.Store(contractName, &types.ContractInfo{
+//		Info:    info,
+//		Address: addr,
+//	})
+//
+//	res, _ := c.ContractInfo.Load(contractName)
+//	return res.(*types.ContractInfo)
+//}

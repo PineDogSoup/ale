@@ -1,4 +1,4 @@
-package contract
+package consts
 
 const (
 	// contract
@@ -27,4 +27,5 @@ const (
 	TokenContractCrossChainTransfer     = "CrossChainTransfer"
 	CrossChainContractCrossChainReceive = "CrossChainReceive"
 	PortkeyContractGetHolderInfo        = "GetHolderInfo"
+	PortkeyContractManagerApprove       = "ManagerApprove"
 )

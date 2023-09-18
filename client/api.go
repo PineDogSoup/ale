@@ -64,8 +64,7 @@ type AElfAPI interface {
 
 // GetChainStatus Get the current status of the block chain.
 func (c *AElfClient) GetChainStatus() (*types.ChainStatus, error) {
-	url := c.Host + CHAINSTATUS
-	chainBytes, err := utils.GetRequest("GET", url, c.Version, nil)
+	chainBytes, err := utils.GetRequest(c.Host+CHAINSTATUS, c.Version, nil)
 	if err != nil {
 		return nil, errors.New("Get ChainStatus error:" + err.Error())
 	}
@@ -76,9 +75,8 @@ func (c *AElfClient) GetChainStatus() (*types.ChainStatus, error) {
 
 // GetContractFileDescriptorSet Get the definitions of proto-buff related to a contract.
 func (c *AElfClient) GetContractFileDescriptorSet(address string) ([]byte, error) {
-	url := c.Host + FILEDESCRIPTOR
 	params := map[string]interface{}{"address": address}
-	data, err := utils.GetRequest("GET", url, c.Version, params)
+	data, err := utils.GetRequest(c.Host+FILEDESCRIPTOR, c.Version, params)
 	if err != nil {
 		return nil, errors.New("Get ContractFile Descriptor Set error:" + err.Error())
 	}
@@ -107,8 +105,7 @@ func (c *AElfClient) GetChainID() (int, error) {
 
 // GetTaskQueueStatus Get the status information of the task queue.
 func (c *AElfClient) GetTaskQueueStatus() ([]*types.TaskQueueInfo, error) {
-	url := c.Host + TASKQUEUESTATUS
-	queues, err := utils.GetRequest("GET", url, c.Version, nil)
+	queues, err := utils.GetRequest(c.Host+TASKQUEUESTATUS, c.Version, nil)
 	if err != nil {
 		return nil, errors.New("Get Task Queue Status error:" + err.Error())
 	}
@@ -129,8 +126,7 @@ func (c *AElfClient) GetTaskQueueStatus() ([]*types.TaskQueueInfo, error) {
 
 // GetNetworkInfo Get the node's network information.
 func (c *AElfClient) GetNetworkInfo() (*types.NetworkInfo, error) {
-	url := c.Host + NETWORKINFO
-	networkBytes, err := utils.GetRequest("GET", url, c.Version, nil)
+	networkBytes, err := utils.GetRequest(c.Host+NETWORKINFO, c.Version, nil)
 	if err != nil {
 		return nil, errors.New("Get Network Info error:" + err.Error())
 	}
@@ -141,9 +137,8 @@ func (c *AElfClient) GetNetworkInfo() (*types.NetworkInfo, error) {
 
 // GetPeers Gets information about the peer nodes of the current node.Optional whether to include metrics.
 func (c *AElfClient) GetPeers(withMetrics bool) ([]*types.Peer, error) {
-	url := c.Host + PEERS
 	params := map[string]interface{}{"withMetrics": withMetrics}
-	peerBytes, err := utils.GetRequest("GET", url, c.Version, params)
+	peerBytes, err := utils.GetRequest(c.Host+PEERS, c.Version, params)
 	if err != nil {
 		return nil, errors.New("Get Peers error:" + err.Error())
 	}
@@ -161,160 +156,160 @@ func (c *AElfClient) GetPeers(withMetrics bool) ([]*types.Peer, error) {
 
 // GetBlockHeight Get height of the current chain.
 func (c *AElfClient) GetBlockHeight() (int64, error) {
-	url := c.Host + BLOCKHEIGHT
-	heightBytes, err := utils.GetRequest("GET", url, c.Version, nil)
+	heightBytes, err := utils.GetRequest(c.Host+BLOCKHEIGHT, c.Version, nil)
 	if err != nil {
 		return 0, errors.New("Get BlockHeight error:" + err.Error())
 	}
+
 	var data interface{}
 	json.Unmarshal(heightBytes, &data)
+
 	return int64(data.(float64)), nil
 }
 
 // GetBlockByHash Get information of a block by given block hash. Optional whether to include transaction information.
 func (c *AElfClient) GetBlockByHash(blockHash string, includeTransactions bool) (*types.Block, error) {
-	_, err := hex.DecodeString(blockHash)
-	if err != nil {
+	if _, err := hex.DecodeString(blockHash); err != nil {
 		return nil, errors.New("transactionID hex to []byte error:" + err.Error())
 	}
-	params := map[string]interface{}{
+
+	blockBytes, err := utils.GetRequest(c.Host+BLOCKBYHASH, c.Version, map[string]interface{}{
 		"blockHash":           blockHash,
 		"includeTransactions": includeTransactions,
-	}
-	url := c.Host + BLOCKBYHASH
-	blockBytes, err := utils.GetRequest("GET", url, c.Version, params)
+	})
 	if err != nil {
 		return nil, errors.New("Get Block ByHash error:" + err.Error())
 	}
+
 	var block = new(types.Block)
 	json.Unmarshal(blockBytes, &block)
+
 	return block, nil
 }
 
 // GetBlockByHeight Get information of a block by specified height. Optional whether to include transaction information.
 func (c *AElfClient) GetBlockByHeight(blockHeight int64, includeTransactions bool) (*types.Block, error) {
-	params := map[string]interface{}{
+	blockBytes, err := utils.GetRequest(c.Host+BLOCKBYHEIGHT, c.Version, map[string]interface{}{
 		"blockHeight":         blockHeight,
 		"includeTransactions": includeTransactions,
-	}
-	url := c.Host + BLOCKBYHEIGHT
-	blockBytes, err := utils.GetRequest("GET", url, c.Version, params)
+	})
 	if err != nil {
 		return nil, errors.New("Get Block ByHeight error:" + err.Error())
 	}
+
 	var block = new(types.Block)
 	json.Unmarshal(blockBytes, &block)
+
 	return block, nil
 }
 
 // ExecuteTransaction  Call a read-only method of a contract.
 func (c *AElfClient) ExecuteTransaction(rawTransaction string) (string, error) {
-	url := c.Host + EXECUTETRANSACTION
-	params := map[string]interface{}{"RawTransaction": rawTransaction}
-	transactionBytes, err := utils.PostRequest(url, c.Version, params)
+	transactionBytes, err := utils.PostRequest(c.Host+EXECUTETRANSACTION, c.Version, map[string]interface{}{"RawTransaction": rawTransaction})
 	if err != nil {
 		return "", errors.New("Execute Transaction error:" + err.Error())
 	}
+
 	return utils.BytesToString(transactionBytes), nil
 }
 
 // ExecuteRawTransaction Call a method of a contract by given serialized strings.
 func (c *AElfClient) ExecuteRawTransaction(input *types.ExecuteRawTransaction) (string, error) {
-	url := c.Host + EXECUTERAWTRANSACTION
-	params := map[string]interface{}{
+	transactionBytes, err := utils.PostRequest(c.Host+EXECUTERAWTRANSACTION, c.Version, map[string]interface{}{
 		"RawTransaction": input.RawTransaction,
 		"Signature":      input.Signature,
-	}
-	transactionBytes, err := utils.PostRequest(url, c.Version, params)
+	})
 	if err != nil {
 		return "", errors.New("Execute RawTransaction error:" + err.Error())
 	}
-	//var data interface{}
-	//json.Unmarshal(transactionBytes, &data)
+
 	return utils.BytesToString(transactionBytes), nil
 }
 
 // SendTransaction Broadcast a transaction.
 func (c *AElfClient) SendTransaction(transaction string) (*types.SendTransactionOutput, error) {
-	url := c.Host + SENDTRANSACTION
-	params := map[string]interface{}{"RawTransaction": transaction}
-	transactionBytes, err := utils.PostRequest(url, c.Version, params)
+	transactionBytes, err := utils.PostRequest(c.Host+SENDTRANSACTION, c.Version, map[string]interface{}{"RawTransaction": transaction})
 	if err != nil {
 		return nil, errors.New("Send Transaction error:" + err.Error())
 	}
+
 	var output = new(types.SendTransactionOutput)
 	json.Unmarshal(transactionBytes, &output)
+
 	return output, nil
 }
 
 // CreateRawTransaction Creates an unsigned serialized transaction.
 func (c *AElfClient) CreateRawTransaction(input *types.CreateRawTransactionInput) (*types.CreateRawTransactionOutput, error) {
-	url := c.Host + RAWTRANSACTION
-	params := map[string]interface{}{
+	transactionBytes, err := utils.PostRequest(c.Host+RAWTRANSACTION, c.Version, map[string]interface{}{
 		"From":           input.From,
 		"MethodName":     input.MethodName,
 		"Params":         input.Params,
 		"RefBlockHash":   input.RefBlockHash,
 		"RefBlockNumber": input.RefBlockNumber,
 		"To":             input.To,
-	}
-	transactionBytes, err := utils.PostRequest(url, c.Version, params)
+	})
 	if err != nil {
 		return nil, errors.New("Create RawTransaction error:" + err.Error())
 	}
+
 	var output = new(types.CreateRawTransactionOutput)
 	json.Unmarshal(transactionBytes, &output)
+
 	return output, nil
 }
 
 // SendRawTransaction Broadcast a serialized transaction.
 func (c *AElfClient) SendRawTransaction(transaction, signature string, returnTransaction bool) (*types.SendRawTransaction, error) {
-	url := c.Host + SENDRAWTRANSACTION
-	params := map[string]interface{}{
+	var rawTransaction = new(types.SendRawTransaction)
+
+	rawTransactionBytes, err := utils.PostRequest(c.Host+SENDRAWTRANSACTION, c.Version, map[string]interface{}{
 		"Transaction":       transaction,
 		"Signature":         signature,
 		"ReturnTransaction": returnTransaction,
-	}
-	rawTransactionBytes, err := utils.PostRequest(url, c.Version, params)
+	})
 	if err != nil {
 		return nil, errors.New("Send RawTransaction error:" + err.Error())
 	}
-	var rawTransaction = new(types.SendRawTransaction)
+
 	json.Unmarshal(rawTransactionBytes, &rawTransaction)
+
 	return rawTransaction, nil
 }
 
 // SendTransactions Broadcast volume transactions.
 func (c *AElfClient) SendTransactions(rawTransactions string) ([]interface{}, error) {
-	url := c.Host + SENDTRANSACTIONS
-	params := map[string]interface{}{
+	var data interface{}
+	var transactions []interface{}
+
+	transactionsBytes, err := utils.PostRequest(c.Host+SENDTRANSACTIONS, c.Version, map[string]interface{}{
 		"RawTransactions": rawTransactions,
-	}
-	transactionsBytes, err := utils.PostRequest(url, c.Version, params)
+	})
 	if err != nil {
 		return nil, errors.New("Send Transaction error:" + err.Error())
 	}
-	var data interface{}
+
 	json.Unmarshal(transactionsBytes, &data)
-	var transactions []interface{}
 	for _, d := range data.([]interface{}) {
 		transactions = append(transactions, d)
 	}
+
 	return transactions, nil
 }
 
 func (c *AElfClient) CalculateTransactionFee(rawTransaction string) (*types.CalculateTransactionFee, error) {
-	url := c.Host + CALCULATETRANSACTIONFEE
-	params := map[string]interface{}{
+	var feeResult = new(types.CalculateTransactionFee)
+
+	transactionFeeResult, err := utils.PostRequest(c.Host+CALCULATETRANSACTIONFEE, c.Version, map[string]interface{}{
 		"RawTransaction": rawTransaction,
-	}
-	transactionFeeResult, err := utils.PostRequest(url, c.Version, params)
+	})
 	if err != nil {
 		return nil, errors.New("CalculateTransactionFee error:" + err.Error())
 	}
-	var feeResult = new(types.CalculateTransactionFee)
+
 	json.Unmarshal(transactionFeeResult, &feeResult)
 	spew.Dump("CalculateTransactionFee : ", feeResult.Success)
+
 	return feeResult, nil
 
 }
