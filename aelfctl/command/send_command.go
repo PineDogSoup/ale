@@ -13,7 +13,12 @@ func NewSendCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "send [options] <methodName> <inputString>",
 		Short: "Send transaction with contract method input by string.",
-		Run:   sendCommandFunc,
+		Long: `
+For example,
+$ aelfctl send transfer --endpoints="http://127.0.0.1:8000" --privateKey="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" '{"to":"wWnNNjrUiveHWrmogtQnQvzJBbiqerwndzM7WuvU1kxLfZC6Z","symbol":"ELF","amount":1,"memo":"transfer in test"}'
+will send transfer to <TO> in your chain by your <privateKey>.
+`,
+		Run: sendCommandFunc,
 	}
 	return cmd
 }

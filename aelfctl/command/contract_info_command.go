@@ -29,7 +29,12 @@ func NewContractInfoCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "contracts [options]",
 		Short: "Get the default contract ContractName & ContractVersion & Author & ContractAddress",
-		Run:   contractInfoCommandFunc,
+		Long: `
+For example,
+$ contracts --endpoint="http://127.0.0.1:8000" 
+will get all contract info in your chain.
+`,
+		Run: contractInfoCommandFunc,
 	}
 	return cmd
 }

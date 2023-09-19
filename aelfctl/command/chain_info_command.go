@@ -12,9 +12,14 @@ import (
 
 func NewChainInfoCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "chains [options]",
+		Use:   "chains",
 		Short: "Get all chain env chainId chainName portkeyContractAddress endpoint",
-		Run:   chainInfoCommandFunc,
+		Long: `
+For example,
+$ ealfctl chains 
+will get all chain info.
+`,
+		Run: chainInfoCommandFunc,
 	}
 	return cmd
 }

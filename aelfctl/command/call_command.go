@@ -12,7 +12,12 @@ func NewCallCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "call [options] <methodName> <inputString>",
 		Short: "Call contract method name with contract method input by string.",
-		Run:   callCommandFunc,
+		Long: `
+For example,
+$ call getBalance --endpoint="http://127.0.0.1:8000" '{"symbol":"ELF", "owner":"wWnNNjrUiveHWrmogtQnQvzJBbiqerwndzM7WuvU1kxLfZC6Z"}'
+will get <owner> balance of ELF in your local chain.
+`,
+		Run: callCommandFunc,
 	}
 
 	return cmd
